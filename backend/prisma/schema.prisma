@@ -1,0 +1,165 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [postgis()]
+}
+
+enum UserRole {
+  USER
+  VENDOR
+  ADMIN
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  COMPLETED
+}
+
+enum AttendeeStatus {
+  INTERESTED
+  GOING
+  ATTENDED
+}
+
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  passwordHash    String   @map("password_hash")
+  fullName        String   @map("full_name")
+  profilePicture  String?  @map("profile_picture")
+  phone           String?
+  role            UserRole @default(USER)
+  location        String? // Will store as geography point
+  preferences     Json?
+  emailVerified   Boolean  @default(false) @map("email_verified")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  hostedEvents    Event[]           @relation("EventHost")
+  attendedEvents  EventAttendee[]
+  vendorServices  VendorService[]
+  serviceBids     ServiceBid[]
+  reviews         Review[]
+
+  @@map("users")
+}
+
+model Category {
+  id            String      @id @default(uuid())
+  name          String
+  slug          String      @unique
+  icon          String?
+  parentId      String?     @map("parent_id")
+  parent        Category?   @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  subcategories Category[]  @relation("CategoryHierarchy")
+  events        Event[]
+
+  @@map("categories")
+}
+
+model Event {
+  id            String        @id @default(uuid())
+  title         String
+  description   String
+  categoryId    String        @map("category_id")
+  category      Category      @relation(fields: [categoryId], references: [id])
+  hostId        String        @map("host_id")
+  host          User          @relation("EventHost", fields: [hostId], references: [id])
+  location      String // geography point
+  address       String
+  startDatetime DateTime      @map("start_datetime")
+  endDatetime   DateTime      @map("end_datetime")
+  capacity      Int?
+  price         Float?
+  images        String[]
+  tags          String[]
+  status        EventStatus   @default(DRAFT)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  attendees     EventAttendee[]
+  serviceBids   ServiceBid[]
+  reviews       Review[]
+
+  @@index([location])
+  @@index([startDatetime])
+  @@index([categoryId])
+  @@map("events")
+}
+
+model EventAttendee {
+  id        String         @id @default(uuid())
+  eventId   String         @map("event_id")
+  event     Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String         @map("user_id")
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    AttendeeStatus @default(INTERESTED)
+  createdAt DateTime       @default(now()) @map("created_at")
+
+  @@unique([eventId, userId])
+  @@map("event_attendees")
+}
+
+model VendorService {
+  id           String       @id @default(uuid())
+  vendorId     String       @map("vendor_id")
+  vendor       User         @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  serviceName  String       @map("service_name")
+  description  String
+  category     String
+  basePrice    Float        @map("base_price")
+  images       String[]
+  portfolioUrl String?      @map("portfolio_url")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  bids         ServiceBid[]
+
+  @@map("vendor_services")
+}
+
+model ServiceBid {
+  id        String    @id @default(uuid())
+  eventId   String    @map("event_id")
+  event     Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  vendorId  String    @map("vendor_id")
+  vendor    User      @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  serviceId String    @map("service_id")
+  service   VendorService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  bidAmount Float     @map("bid_amount")
+  message   String?
+  status    BidStatus @default(PENDING)
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@map("service_bids")
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  eventId   String   @map("event_id")
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating    Int // 1-5
+  comment   String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([eventId, userId])
+  @@map("reviews")
+}
