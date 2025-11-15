@@ -9,7 +9,7 @@ export default function Navbar() {
   const { isAuthenticated, logout } = useAuthStore()
 
   return (
-    <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200">
+    <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200 h-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -18,8 +18,8 @@ export default function Navbar() {
           </Link>
 
           {/* Search Bar - Desktop */}
-          <div className="hidden lg:flex items-center flex-1 max-w-xl mx-8">
-            <div className="flex w-full border border-gray-300 rounded-md overflow-hidden bg-white shadow-sm">
+          <div className="hidden lg:flex items-center flex-1 max-w-xl px-auto mx-auto">
+            <div className="flex w-full border border-gray-300 rounded-full overflow-hidden bg-white shadow-sm font-inter h-10">
               <div className="flex-1 flex items-center px-4 py-2 border-r border-gray-300">
                 <input
                   type="text"

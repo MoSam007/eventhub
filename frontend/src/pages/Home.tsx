@@ -1,11 +1,15 @@
 import EventList from '../components/events/EventList'
 import HeroSlider from '../components/home/HeroSlider'
 import { DUMMY_EVENTS } from '../utils/dummyData'
+import FeaturedEvent from '../components/home/FeaturedEvent'
+import Insights from '../components/home/Insights'
 
 export default function Home() {
   // Use dummy data for now - first 4 for popular, last 4 for free
   const popularEvents = DUMMY_EVENTS.slice(0, 4)
   const freeEvents = DUMMY_EVENTS.filter(e => e.price === 0).slice(0, 4)
+  const hikingEvents = DUMMY_EVENTS.slice(0, 4) // for demo, reuse
+  const featured = DUMMY_EVENTS[4] // pick one as featured
 
   return (
     <div className="min-h-screen bg-white">
@@ -15,53 +19,59 @@ export default function Home() {
       {/* Popular Events Section */}
       <section className="py-12 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8">
+          <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 mb-8">
             Popular events in Nairobi
           </h2>
-          <EventList events={popularEvents} isLoading={false} />
+          <EventList events={popularEvents} cols={{ sm:2, lg:4 }} />
         </div>
       </section>
 
       {/* Free Events Section */}
       <section className="py-12 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8">
+          <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 mb-8">
             Free events in Nairobi
           </h2>
-          <EventList events={freeEvents} isLoading={false} />
+          <EventList events={freeEvents} cols={{ sm:2, lg:4 }} />
         </div>
       </section>
 
-      {/* Categories Section */}
+      {/* Featured Events (new) */}
       <section className="py-12 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8">
-            Browse by category
+          <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 mb-8">
+            Featured Events
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {[
-              { name: 'Music', emoji: '🎵' },
-              { name: 'Food & Drink', emoji: '🍽️' },
-              { name: 'Arts', emoji: '🎨' },
-              { name: 'Sports', emoji: '⚽' },
-              { name: 'Tech', emoji: '💻' },
-              { name: 'Business', emoji: '💼' },
-              { name: 'Health', emoji: '🏃' },
-              { name: 'Hobbies', emoji: '🎮' },
-              { name: 'Travel', emoji: '✈️' },
-              { name: 'Film', emoji: '🎬' },
-              { name: 'Charity', emoji: '❤️' },
-              { name: 'Family', emoji: '👨‍👩‍👧' },
-            ].map((category) => (
-              <button
-                key={category.name}
-                className="flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-md transition-all"
-              >
-                <span className="text-4xl mb-2">{category.emoji}</span>
-                <span className="text-sm font-medium text-gray-900">{category.name}</span>
-              </button>
-            ))}
-          </div>
+
+          <FeaturedEvent
+            title={featured.title}
+            datetime={featured.startDatetime}
+            address={featured.address}
+            description={featured.description}
+            ctaLabel="Reserve a spot"
+            imageUrl="https://images.unsplash.com/photo-1501492765677-f07c5f3d87db?w=1200&h=900&fit=crop"
+          />
+        </div>
+      </section>
+
+      {/* Hiking events */}
+      <section className="py-12 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 mb-8">
+            Hiking events
+          </h2>
+          <EventList events={hikingEvents} cols={{ sm:2, lg:4 }} />
+        </div>
+      </section>
+
+      {/* Insights from Vendors */}
+      <section className="py-12 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 mb-8">
+            Insights from Vendors
+          </h2>
+
+          <Insights />
         </div>
       </section>
 

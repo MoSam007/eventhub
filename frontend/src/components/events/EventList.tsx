@@ -4,12 +4,20 @@ import EventCard from './EventCard'
 interface EventListProps {
   events: Event[]
   isLoading?: boolean
+  // cols prop allows customizing responsive columns, default kept same as before
+  cols?: { sm?: number; lg?: number }
 }
 
-export default function EventList({ events, isLoading }: EventListProps) {
+function buildGridCols(cols?: { sm?: number; lg?: number }) {
+  const sm = cols?.sm ?? 2
+  const lg = cols?.lg ?? 4
+  return `grid grid-cols-1 sm:grid-cols-${sm} lg:grid-cols-${lg} gap-5`
+}
+
+export default function EventList({ events, isLoading, cols }: EventListProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className={buildGridCols(cols)}>
         {[...Array(4)].map((_, i) => (
           <div key={i} className="animate-pulse">
             <div className="bg-gray-200 h-48 rounded-t-lg" />
@@ -25,7 +33,7 @@ export default function EventList({ events, isLoading }: EventListProps) {
     )
   }
 
-  if (events.length === 0) {
+  if (!events || events.length === 0) {
     return (
       <div className="text-center py-16">
         <p className="text-lg text-gray-600">
@@ -36,7 +44,7 @@ export default function EventList({ events, isLoading }: EventListProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+    <div className={buildGridCols(cols)}>
       {events.map((event) => (
         <EventCard key={event.id} event={event} />
       ))}

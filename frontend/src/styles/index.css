@@ -1,4 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 @import "tailwindcss";
+
 
 @theme {
   --color-orange-50: #fff7ed;
@@ -12,6 +14,9 @@
   --color-orange-800: #9a3412;
   --color-orange-900: #7c2d12;
 }
+.font-inter {
+  font-family: 'Inter', sans-serif;
+}
 
 @layer base {
   body {
@@ -19,3 +24,4 @@
     color: #111827;
   }
 }
+
