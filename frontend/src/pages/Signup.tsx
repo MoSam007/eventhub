@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import Input from '../components/common/Input'
 import Button from '../components/Button'
-import { Calendar } from 'lucide-react'
+import { Mail, Lock, User, Phone } from 'lucide-react'
 
 export default function Signup() {
   const [formData, setFormData] = useState({
@@ -50,6 +50,12 @@ export default function Signup() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (validateForm()) {
+      console.log('Submitting registration:', {
+        fullName: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone || undefined,
+      })
       register({
         fullName: formData.fullName,
         email: formData.email,
@@ -60,80 +66,99 @@ export default function Signup() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center px-4 py-12">
       <div className="max-w-md w-full">
-        {/* Logo */}
+        {/* Header */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center justify-center space-x-2 text-white mb-4">
-            <Calendar size={48} />
-            <span className="text-4xl font-bold">EventHub</span>
+          <Link to="/" className="inline-flex items-center justify-center text-orange-600 mb-4">
+            <div className="text-4xl font-bold">Events Hub</div>
           </Link>
-          <h2 className="text-2xl font-semibold text-white">Create Account</h2>
-          <p className="text-white/80 mt-2">Join EventHub today</p>
+          <h2 className="text-3xl font-bold text-gray-900">Create Account</h2>
+          <p className="text-gray-600 mt-2">Join Events Hub today</p>
         </div>
 
-        {/* Form */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8">
+        {/* Form Card */}
+        <div className="bg-white rounded-xl shadow-lg p-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             {registerError && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 text-sm text-red-600 dark:text-red-400">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-600">
                 Registration failed. Please try again.
               </div>
             )}
 
-            <Input
-              label="Full Name"
-              name="fullName"
-              type="text"
-              value={formData.fullName}
-              onChange={handleChange}
-              placeholder="John Doe"
-              error={errors.fullName}
-              required
-            />
+            <div className="relative">
+              <User className="absolute left-3 top-10 text-gray-400" size={20} />
+              <Input
+                label="Full Name"
+                name="fullName"
+                type="text"
+                value={formData.fullName}
+                onChange={handleChange}
+                placeholder="John Doe"
+                error={errors.fullName}
+                required
+                className="pl-10"
+              />
+            </div>
 
-            <Input
-              label="Email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="you@example.com"
-              error={errors.email}
-              required
-            />
+            <div className="relative">
+              <Mail className="absolute left-3 top-10 text-gray-400" size={20} />
+              <Input
+                label="Email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="you@example.com"
+                error={errors.email}
+                required
+                className="pl-10"
+              />
+            </div>
 
-            <Input
-              label="Phone (Optional)"
-              name="phone"
-              type="tel"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="+1 (555) 000-0000"
-            />
+            <div className="relative">
+              <Phone className="absolute left-3 top-10 text-gray-400" size={20} />
+              <Input
+                label="Phone (Optional)"
+                name="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="+254 700 000000"
+                className="pl-10"
+              />
+            </div>
 
-            <Input
-              label="Password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="••••••••"
-              error={errors.password}
-              helperText="Must be at least 8 characters"
-              required
-            />
+            <div className="relative">
+              <Lock className="absolute left-3 top-10 text-gray-400" size={20} />
+              <Input
+                label="Password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="••••••••"
+                error={errors.password}
+                helperText="Must be at least 8 characters"
+                required
+                className="pl-10"
+              />
+            </div>
 
-            <Input
-              label="Confirm Password"
-              name="confirmPassword"
-              type="password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              placeholder="••••••••"
-              error={errors.confirmPassword}
-              required
-            />
+            <div className="relative">
+              <Lock className="absolute left-3 top-10 text-gray-400" size={20} />
+              <Input
+                label="Confirm Password"
+                name="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="••••••••"
+                error={errors.confirmPassword}
+                required
+                className="pl-10"
+              />
+            </div>
 
             <Button
               type="submit"
@@ -146,11 +171,11 @@ export default function Signup() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600">
               Already have an account?{' '}
               <Link
                 to="/login"
-                className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400"
+                className="font-medium text-orange-600 hover:text-orange-700"
               >
                 Sign in
               </Link>

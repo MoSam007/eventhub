@@ -1,10 +1,9 @@
-import '../types/index';
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database';
 import { hashPassword, comparePassword } from '../utils/password.util';
 import { generateToken, generateRefreshToken } from '../utils/jwt.utils';
 import { AppError } from '../middleware/error.middleware';
-import { RegisterData, LoginCredentials } from '../types/types';
+import { RegisterData, LoginCredentials } from '../types';
 
 export const register = async (
   req: Request<{}, {}, RegisterData>,
@@ -12,21 +11,29 @@ export const register = async (
   next: NextFunction
 ) => {
   try {
+    console.log('Register request body:', req.body);
+    
     const { email, password, fullName, phone } = req.body;
 
+    // Check if user already exists
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      throw new AppError('Email already registered', 409);
+      return res.status(409).json({
+        status: 'error',
+        message: 'Email already registered',
+      });
     }
 
+    // Hash password
     const passwordHash = await hashPassword(password);
 
+    // Create user
     const user = await prisma.user.create({
       data: {
         email,
         passwordHash,
         fullName,
-        phone,
+        phone: phone || null,
       },
       select: {
         id: true,
@@ -37,6 +44,7 @@ export const register = async (
       },
     });
 
+    // Generate tokens
     const token = generateToken({
       userId: user.id,
       email: user.email,
@@ -49,12 +57,15 @@ export const register = async (
       role: user.role,
     });
 
+    console.log('User registered successfully:', user.email);
+
     res.status(201).json({
       status: 'success',
       message: 'User registered successfully',
       data: { user, token, refreshToken },
     });
   } catch (error) {
+    console.error('Registration error:', error);
     next(error);
   }
 };
@@ -65,18 +76,29 @@ export const login = async (
   next: NextFunction
 ) => {
   try {
+    console.log('Login request body:', req.body);
+    
     const { email, password } = req.body;
 
+    // Find user
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      throw new AppError('Invalid credentials', 401);
+      return res.status(401).json({
+        status: 'error',
+        message: 'Invalid credentials',
+      });
     }
 
+    // Verify password
     const isValidPassword = await comparePassword(password, user.passwordHash);
     if (!isValidPassword) {
-      throw new AppError('Invalid credentials', 401);
+      return res.status(401).json({
+        status: 'error',
+        message: 'Invalid credentials',
+      });
     }
 
+    // Generate tokens
     const token = generateToken({
       userId: user.id,
       email: user.email,
@@ -91,12 +113,15 @@ export const login = async (
 
     const { passwordHash, ...userWithoutPassword } = user;
 
+    console.log('User logged in successfully:', user.email);
+
     res.status(200).json({
       status: 'success',
       message: 'Login successful',
       data: { user: userWithoutPassword, token, refreshToken },
     });
   } catch (error) {
+    console.error('Login error:', error);
     next(error);
   }
 };

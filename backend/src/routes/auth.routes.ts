@@ -7,8 +7,14 @@ import { authLimiter } from '../middleware/rateLimiter.middleware';
 
 const router = Router();
 
-router.post('/register', authLimiter, registerValidation, validate, register);
-router.post('/login', authLimiter, loginValidation, validate, login);
+// Add logging middleware
+router.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`, req.body);
+  next();
+});
+
+router.post('/register', registerValidation, validate, register);
+router.post('/login', loginValidation, validate, login);
 router.get('/me', authenticate, getMe);
 
 export default router;

@@ -3,79 +3,79 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import Input from '../components/common/Input'
 import Button from '../components/Button'
-import { Mail, Lock, Calendar } from 'lucide-react'
+import { Mail, Lock } from 'lucide-react'
 
 export default function Login() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  })
   const { login, isLoggingIn, loginError } = useAuth()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    login({ email, password })
+    console.log('Submitting login:', formData)
+    login(formData)
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center px-4 py-12">
       <div className="max-w-md w-full">
-        {/* Logo */}
+        {/* Header */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center justify-center space-x-2 text-white mb-4">
-            <Calendar size={48} />
-            <span className="text-4xl font-bold">EventHub</span>
+          <Link to="/" className="inline-flex items-center justify-center text-orange-600 mb-4">
+            <div className="text-4xl font-bold">Events Hub</div>
           </Link>
-          <h2 className="text-2xl font-semibold text-white">Welcome Back</h2>
-          <p className="text-white/80 mt-2">Sign in to continue to your account</p>
+          <h2 className="text-3xl font-bold text-gray-900">Welcome Back</h2>
+          <p className="text-gray-600 mt-2">Sign in to continue to your account</p>
         </div>
 
-        {/* Form */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8">
+        {/* Form Card */}
+        <div className="bg-white rounded-xl shadow-lg p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {loginError && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 text-sm text-red-600 dark:text-red-400">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-600">
                 Invalid email or password. Please try again.
               </div>
             )}
 
-            <div>
+            <div className="relative">
+              <Mail className="absolute left-3 top-10 text-gray-400" size={20} />
               <Input
                 label="Email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="you@example.com"
                 required
                 className="pl-10"
               />
-              <Mail className="absolute left-3 top-9 text-gray-400" size={20} />
             </div>
 
-            <div>
+            <div className="relative">
+              <Lock className="absolute left-3 top-10 text-gray-400" size={20} />
               <Input
                 label="Password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 placeholder="••••••••"
                 required
                 className="pl-10"
               />
-              <Lock className="absolute left-3 top-9 text-gray-400" size={20} />
             </div>
 
             <div className="flex items-center justify-between">
               <label className="flex items-center">
                 <input
                   type="checkbox"
-                  className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
                 />
-                <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
-                  Remember me
-                </span>
+                <span className="ml-2 text-sm text-gray-600">Remember me</span>
               </label>
               <Link
                 to="/forgot-password"
-                className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400"
+                className="text-sm text-orange-600 hover:text-orange-700"
               >
                 Forgot password?
               </Link>
@@ -92,11 +92,11 @@ export default function Login() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600">
               Don't have an account?{' '}
               <Link
                 to="/signup"
-                className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400"
+                className="font-medium text-orange-600 hover:text-orange-700"
               >
                 Sign up
               </Link>
