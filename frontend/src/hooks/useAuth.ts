@@ -1,19 +1,25 @@
 import { useAuthStore } from '../store/authStore'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { authService } from '../services/auth.service'
-import { useNavigate } from 'react-router-dom'
-import { User } from '../types'
-import { useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 export const useAuth = () => {
   const { user, setUser, logout, isAuthenticated } = useAuthStore()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const loginMutation = useMutation({
     mutationFn: authService.login,
     onSuccess: (data) => {
       setUser(data.data.user)
-      navigate('/')
+      const from = (location.state as any)?.from?.pathname
+      
+      // Redirect based on role
+      if (data.data.user.role === 'VENDOR') {
+        navigate(from || '/vendor/dashboard')
+      } else {
+        navigate(from || '/events')
+      }
     },
   })
 
@@ -21,21 +27,20 @@ export const useAuth = () => {
     mutationFn: authService.register,
     onSuccess: (data) => {
       setUser(data.data.user)
-      navigate('/')
+      // Always go to onboarding after signup
+      navigate('/onboarding')
     },
   })
 
-  const { data: currentUser, refetch: refetchUser } = useQuery<User, Error>({
+  const { refetch: refetchUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: authService.getMe,
     enabled: isAuthenticated,
+    // @ts-ignore
+    onSuccess: (data) => {
+      setUser(data)
+    },
   })
-
-  useEffect(() => {
-    if (currentUser) {
-      setUser(currentUser)
-    }
-  }, [currentUser, setUser])
 
   return {
     user,

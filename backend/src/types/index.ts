@@ -30,4 +30,5 @@ export interface RegisterData {
   password: string;
   fullName: string;
   phone?: string;
+  role?: 'USER' | 'VENDOR' 
 }

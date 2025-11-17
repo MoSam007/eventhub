@@ -1,5 +1,5 @@
-import { Routes, Route } from 'react-router-dom'
-import { useThemeStore } from './store/themeStore'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { useAuthStore } from './store/authStore'
 import { useEffect } from 'react'
 
 // Layouts
@@ -12,6 +12,7 @@ import Events from './pages/Events'
 import EventDetail from './pages/EventDetail'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
+import Onboarding from './pages/Onboarding'
 import Profile from './pages/Profile'
 import VendorDashboard from './pages/vendor/Dashboard'
 import CreateEvent from './pages/vendor/CreateEvent'
@@ -21,15 +22,11 @@ import NotFound from './pages/NotFound'
 import ProtectedRoute from './components/common/ProtectedRoute'
 
 function App() {
-  const { isDark } = useThemeStore()
+  const { initAuth } = useAuthStore()
 
   useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-  }, [isDark])
+    initAuth()
+  }, [initAuth])
 
   return (
     <Routes>
@@ -42,7 +39,17 @@ function App() {
         <Route path="signup" element={<Signup />} />
       </Route>
 
-      {/* Protected Routes */}
+      {/* Onboarding Route */}
+      <Route
+        path="/onboarding"
+        element={
+          <ProtectedRoute>
+            <Onboarding />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Protected User Routes */}
       <Route
         path="/profile"
         element={
@@ -67,10 +74,28 @@ function App() {
         <Route path="create-event" element={<CreateEvent />} />
       </Route>
 
+      {/* Redirect /create-events to vendor route or signup */}
+      <Route path="/create-event" element={<CreateEventRedirect />} />
+
       {/* 404 */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   )
+}
+
+// Helper component for create event redirect
+function CreateEventRedirect() {
+  const { isAuthenticated, user } = useAuthStore()
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/signup" state={{ intendedRole: 'VENDOR' }} replace />
+  }
+  
+  if (user?.role === 'VENDOR' || user?.role === 'ADMIN') {
+    return <Navigate to="/vendor/create-event" replace />
+  }
+  
+  return <Navigate to="/" replace />
 }
 
 export default App

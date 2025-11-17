@@ -1,24 +1,35 @@
 import { ReactNode, useEffect } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 
 interface ProtectedRouteProps {
   children: ReactNode
   requiredRole?: 'USER' | 'VENDOR' | 'ADMIN'
+  redirectTo?: string
 }
 
-export default function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
+export default function ProtectedRoute({ 
+  children, 
+  requiredRole,
+  redirectTo 
+}: ProtectedRouteProps) {
   const { isAuthenticated, user, initAuth } = useAuthStore()
+  const location = useLocation()
 
   useEffect(() => {
     initAuth()
   }, [initAuth])
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    // Redirect to login and save intended destination
+    return <Navigate to={redirectTo || "/login"} state={{ from: location }} replace />
   }
 
   if (requiredRole && user?.role !== requiredRole && user?.role !== 'ADMIN') {
+    // Redirect based on user's actual role
+    if (user?.role === 'VENDOR') {
+      return <Navigate to="/vendor/dashboard" replace />
+    }
     return <Navigate to="/" replace />
   }
 
