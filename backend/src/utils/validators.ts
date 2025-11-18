@@ -16,6 +16,10 @@ export const registerValidation = [
     .optional({ nullable: true })
     .custom(isE164Phone)
     .withMessage('Phone must be a valid E.164 number'),
+  body('role')
+    .optional()
+    .isIn(['USER', 'VENDOR', 'HOST'])
+    .withMessage('Invalid role'),
 ];
 
 export const loginValidation = [

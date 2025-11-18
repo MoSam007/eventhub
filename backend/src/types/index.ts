@@ -15,9 +15,9 @@ export interface ApiResponse<T = any> {
 }
 
 export interface TokenPayload {
-  userId: string;
-  email: string;
-  role: string;
+  userId: string
+  email: string
+  role: 'USER' | 'HOST' | 'VENDOR' | 'ADMIN'
 }
 
 export interface LoginCredentials {
@@ -30,5 +30,5 @@ export interface RegisterData {
   password: string;
   fullName: string;
   phone?: string;
-  role?: 'USER' | 'VENDOR' 
+  role?: 'USER' | 'HOST' | 'VENDOR' 
 }

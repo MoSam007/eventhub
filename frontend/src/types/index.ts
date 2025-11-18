@@ -4,7 +4,7 @@ export interface User {
   fullName: string
   profilePicture?: string
   phone?: string
-  role: 'USER' | 'VENDOR' | 'ADMIN'
+  role: 'USER' | 'HOST' | 'VENDOR' | 'ADMIN'
   location?: string
   preferences?: any
   createdAt: string

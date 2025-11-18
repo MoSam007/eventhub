@@ -4,7 +4,7 @@ import { useAuthStore } from '../../store/authStore'
 
 interface ProtectedRouteProps {
   children: ReactNode
-  requiredRole?: 'USER' | 'VENDOR' | 'ADMIN'
+  requiredRole?: 'USER' | 'HOST' | 'VENDOR' | 'ADMIN' 
   redirectTo?: string
 }
 
@@ -20,13 +20,18 @@ export default function ProtectedRoute({
     initAuth()
   }, [initAuth])
 
+  console.log('ProtectedRoute check:', { isAuthenticated, userRole: user?.role, requiredRole })
+
   if (!isAuthenticated) {
-    // Redirect to login and save intended destination
     return <Navigate to={redirectTo || "/login"} state={{ from: location }} replace />
   }
 
   if (requiredRole && user?.role !== requiredRole && user?.role !== 'ADMIN') {
+    console.log('Role mismatch, redirecting...')
     // Redirect based on user's actual role
+    if (user?.role === 'HOST') {
+      return <Navigate to="/host/dashboard" replace />
+    }
     if (user?.role === 'VENDOR') {
       return <Navigate to="/vendor/dashboard" replace />
     }

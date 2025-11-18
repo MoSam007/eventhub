@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import Input from '../components/common/Input'
 import Button from '../components/Button'
-import { Mail, Lock, User, Phone, Users, Briefcase } from 'lucide-react'
+import { Mail, Lock, User, Phone, Users, Briefcase, Store } from 'lucide-react'
 
-type UserRole = 'USER' | 'VENDOR'
+type UserRole = 'USER' | 'HOST' | 'VENDOR'
 
 export default function Signup() {
   const [step, setStep] = useState<1 | 2>(1)
@@ -72,13 +72,13 @@ export default function Signup() {
       phone: formData.phone.trim() || undefined,
       role: selectedRole,
     }
-    console.log('Submitting registration:', registrationData)
+    console.log('Submitting registration with role:', registrationData)
     register(registrationData)
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center px-4 py-12">
-      <div className="max-w-2xl w-full">
+      <div className="max-w-4xl w-full">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center justify-center text-orange-600 mb-4">
             <div className="text-4xl font-bold">Events Hub</div>
@@ -93,13 +93,13 @@ export default function Signup() {
           {/* Progress Indicator */}
           <div className="flex items-center justify-center mb-8">
             <div className="flex items-center">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
                 step >= 1 ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-600'
               }`}>
                 1
               </div>
               <div className={`w-24 h-1 ${step >= 2 ? 'bg-orange-600' : 'bg-gray-200'}`} />
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
                 step >= 2 ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-600'
               }`}>
                 2
@@ -197,76 +197,100 @@ export default function Signup() {
                 className="w-full mt-6"
                 size="lg"
               >
-                Next Step
+                Next Step →
               </Button>
             </div>
           )}
 
-          {/* Step 2: Role Selection */}
+          {/* Step 2: Role Selection (3 Options) */}
           {step === 2 && (
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
                   How do you plan to use Events Hub?
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Attendee Option */}
                   <button
                     type="button"
                     onClick={() => setSelectedRole('USER')}
-                    className={`p-6 rounded-xl border-2 transition-all text-left ${
+                    className={`p-6 rounded-xl border-2 transition-all ${
                       selectedRole === 'USER'
-                        ? 'border-orange-600 bg-orange-50 shadow-md'
-                        : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                        ? 'border-orange-600 bg-orange-50 shadow-lg scale-105'
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
                     }`}
                   >
-                    <div className="flex items-start space-x-4">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                    <div className="text-center">
+                      <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ${
                         selectedRole === 'USER' ? 'bg-orange-600 text-white' : 'bg-gray-100 text-gray-600'
                       }`}>
-                        <Users size={24} />
+                        <Users size={28} />
                       </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900 mb-2">I'm an Attendee</h4>
-                        <p className="text-sm text-gray-600">
-                          Discover and attend amazing local events, concerts, workshops, and more.
-                        </p>
-                        <ul className="mt-3 space-y-1 text-sm text-gray-500">
-                          <li>✓ Browse events</li>
-                          <li>✓ Save favorites</li>
-                          <li>✓ Get recommendations</li>
-                        </ul>
-                      </div>
+                      <h4 className="font-bold text-gray-900 mb-2">Attendee</h4>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Discover and attend events
+                      </p>
+                      <ul className="space-y-1 text-xs text-gray-500">
+                        <li>✓ Browse events</li>
+                        <li>✓ Save favorites</li>
+                        <li>✓ Get personalized recommendations</li>
+                      </ul>
                     </div>
                   </button>
 
-                  {/* Host/Vendor Option */}
+                  {/* Host Option */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRole('HOST')}
+                    className={`p-6 rounded-xl border-2 transition-all ${
+                      selectedRole === 'HOST'
+                        ? 'border-orange-600 bg-orange-50 shadow-lg scale-105'
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ${
+                        selectedRole === 'HOST' ? 'bg-orange-600 text-white' : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        <Briefcase size={28} />
+                      </div>
+                      <h4 className="font-bold text-gray-900 mb-2">Event Host</h4>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Create and manage events
+                      </p>
+                      <ul className="space-y-1 text-xs text-gray-500">
+                        <li>✓ Create events</li>
+                        <li>✓ Manage attendees</li>
+                        <li>✓ Review vendor bids</li>
+                      </ul>
+                    </div>
+                  </button>
+
+                  {/* Vendor Option */}
                   <button
                     type="button"
                     onClick={() => setSelectedRole('VENDOR')}
-                    className={`p-6 rounded-xl border-2 transition-all text-left ${
+                    className={`p-6 rounded-xl border-2 transition-all ${
                       selectedRole === 'VENDOR'
-                        ? 'border-orange-600 bg-orange-50 shadow-md'
-                        : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                        ? 'border-orange-600 bg-orange-50 shadow-lg scale-105'
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
                     }`}
                   >
-                    <div className="flex items-start space-x-4">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                    <div className="text-center">
+                      <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ${
                         selectedRole === 'VENDOR' ? 'bg-orange-600 text-white' : 'bg-gray-100 text-gray-600'
                       }`}>
-                        <Briefcase size={24} />
+                        <Store size={28} />
                       </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900 mb-2">I'm a Host/Organizer</h4>
-                        <p className="text-sm text-gray-600">
-                          Create and manage events, reach more attendees, and grow your business.
-                        </p>
-                        <ul className="mt-3 space-y-1 text-sm text-gray-500">
-                          <li>✓ Create events</li>
-                          <li>✓ Manage bookings</li>
-                          <li>✓ Analytics dashboard</li>
-                        </ul>
-                      </div>
+                      <h4 className="font-bold text-gray-900 mb-2">Service Vendor</h4>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Offer services to events
+                      </p>
+                      <ul className="space-y-1 text-xs text-gray-500">
+                        <li>✓ List services</li>
+                        <li>✓ Bid on events</li>
+                        <li>✓ Grow your business</li>
+                      </ul>
                     </div>
                   </button>
                 </div>
@@ -280,7 +304,7 @@ export default function Signup() {
                   className="flex-1"
                   size="lg"
                 >
-                  Back
+                  ← Back
                 </Button>
                 <Button
                   type="submit"

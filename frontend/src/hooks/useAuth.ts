@@ -11,13 +11,20 @@ export const useAuth = () => {
   const loginMutation = useMutation({
     mutationFn: authService.login,
     onSuccess: (data) => {
+      console.log('Login success, user role:', data.data.user.role)
       setUser(data.data.user)
+      
       const from = (location.state as any)?.from?.pathname
       
       // Redirect based on role
-      if (data.data.user.role === 'VENDOR') {
+      if (data.data.user.role === 'HOST') {
+        console.log('Redirecting to host dashboard')
+        navigate(from || '/host/dashboard')
+      } else if (data.data.user.role === 'VENDOR') {
+        console.log('Redirecting to vendor dashboard')
         navigate(from || '/vendor/dashboard')
       } else {
+        console.log('Redirecting to events')
         navigate(from || '/events')
       }
     },
@@ -26,6 +33,7 @@ export const useAuth = () => {
   const registerMutation = useMutation({
     mutationFn: authService.register,
     onSuccess: (data) => {
+      console.log('Registration success, user role:', data.data.user.role)
       setUser(data.data.user)
       // Always go to onboarding after signup
       navigate('/onboarding')
@@ -36,10 +44,6 @@ export const useAuth = () => {
     queryKey: ['currentUser'],
     queryFn: authService.getMe,
     enabled: isAuthenticated,
-    // @ts-ignore
-    onSuccess: (data) => {
-      setUser(data)
-    },
   })
 
   return {

@@ -14,11 +14,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
 
-  setUser: (user) =>
+  setUser: (user) => {
+    console.log('Setting user in store:', user)  // Add logging
     set({
       user,
       isAuthenticated: !!user,
-    }),
+    })
+  },
 
   logout: () => {
     authService.logout()
@@ -28,6 +30,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   initAuth: () => {
     const user = authService.getCurrentUser()
     const isAuthenticated = authService.isAuthenticated()
+    console.log('Initializing auth:', { user, isAuthenticated }) 
     set({ user, isAuthenticated })
   },
 }))

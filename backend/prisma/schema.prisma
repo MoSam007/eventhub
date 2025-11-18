@@ -13,6 +13,7 @@ enum UserRole {
   USER
   VENDOR
   ADMIN
+  HOST
 }
 
 enum EventStatus {
