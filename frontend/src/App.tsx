@@ -1,12 +1,12 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import { useEffect } from 'react'
 
 // Layouts
 import MainLayout from './components/layout/MainLayout'
-import DashboardLayout from './components/layout/DashboardLayout'
+import SidebarLayout from './components/layout/SidebarLayout'
 
-// Pages
+// Public Pages
 import Home from './pages/Home'
 import Events from './pages/Events'
 import EventDetail from './pages/EventDetail'
@@ -14,9 +14,18 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Onboarding from './pages/Onboarding'
 import Profile from './pages/Profile'
-import VendorDashboard from './pages/vendor/Dashboard'
-import CreateEvent from './pages/vendor/CreateEvent'
 import NotFound from './pages/NotFound'
+
+// Admin Pages
+import AdminDashboard from './pages/admin/Dashboard'
+import AdminUsers from './pages/admin/Users'
+
+// Host Pages
+import HostDashboard from './pages/host/Dashboard'
+import CreateEvent from './pages/host/CreateEvent'
+
+// Vendor Pages
+import VendorDashboard from './pages/vendor/Dashboard'
 
 // Protected Route Component
 import ProtectedRoute from './components/common/ProtectedRoute'
@@ -39,7 +48,7 @@ function App() {
         <Route path="signup" element={<Signup />} />
       </Route>
 
-      {/* Onboarding Route */}
+      {/* Onboarding */}
       <Route
         path="/onboarding"
         element={
@@ -49,7 +58,7 @@ function App() {
         }
       />
 
-      {/* Protected User Routes */}
+      {/* User Routes */}
       <Route
         path="/profile"
         element={
@@ -61,21 +70,54 @@ function App() {
         <Route index element={<Profile />} />
       </Route>
 
+      {/* Admin Routes */}
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute requiredRole="ADMIN">
+            <SidebarLayout role="ADMIN" />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="users" element={<AdminUsers />} />
+        <Route path="hosts" element={<div>Hosts Management</div>} />
+        <Route path="vendors" element={<div>Vendors Management</div>} />
+        <Route path="events" element={<div>Events Management</div>} />
+        <Route path="settings" element={<div>Settings</div>} />
+      </Route>
+
+      {/* Host Routes */}
+      <Route
+        path="/host"
+        element={
+          <ProtectedRoute requiredRole="HOST">
+            <SidebarLayout role="HOST" />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="dashboard" element={<HostDashboard />} />
+        <Route path="create-event" element={<CreateEvent />} />
+        <Route path="events" element={<div>My Events</div>} />
+        <Route path="bids" element={<div>Vendor Bids</div>} />
+        <Route path="settings" element={<div>Settings</div>} />
+      </Route>
+
       {/* Vendor Routes */}
       <Route
         path="/vendor"
         element={
           <ProtectedRoute requiredRole="VENDOR">
-            <DashboardLayout />
+            <SidebarLayout role="VENDOR" />
           </ProtectedRoute>
         }
       >
         <Route path="dashboard" element={<VendorDashboard />} />
-        <Route path="create-event" element={<CreateEvent />} />
+        <Route path="services" element={<div>My Services</div>} />
+        <Route path="events" element={<div>Browse Events</div>} />
+        <Route path="bids" element={<div>My Bids</div>} />
+        <Route path="settings" element={<div>Settings</div>} />
       </Route>
-
-      {/* Redirect /create-events to vendor route or signup */}
-      <Route path="/create-event" element={<CreateEventRedirect />} />
 
       {/* 404 */}
       <Route path="*" element={<NotFound />} />
@@ -83,19 +125,5 @@ function App() {
   )
 }
 
-// Helper component for create event redirect
-function CreateEventRedirect() {
-  const { isAuthenticated, user } = useAuthStore()
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/signup" state={{ intendedRole: 'VENDOR' }} replace />
-  }
-  
-  if (user?.role === 'VENDOR' || user?.role === 'ADMIN') {
-    return <Navigate to="/vendor/create-event" replace />
-  }
-  
-  return <Navigate to="/" replace />
-}
 
 export default App

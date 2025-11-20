@@ -33,22 +33,37 @@ export default function Onboarding() {
 
   const handleComplete = async () => {
     setIsSubmitting(true)
-    // TODO: Save interests to user preferences
     console.log('User interests:', selectedInterests)
     
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000))
     
+    console.log('=== ONBOARDING COMPLETE ===')
+    console.log('User role:', user?.role)
+    
     // Redirect based on role
-    if (user?.role === 'VENDOR') {
+    if (user?.role === 'ADMIN') {
+      console.log('→ Redirecting to /admin/dashboard')
+      navigate('/admin/dashboard')
+    } else if (user?.role === 'HOST') {
+      console.log('→ Redirecting to /host/dashboard')
+      navigate('/host/dashboard')
+    } else if (user?.role === 'VENDOR') {
+      console.log('→ Redirecting to /vendor/dashboard')
       navigate('/vendor/dashboard')
     } else {
+      console.log('→ Redirecting to /events')
       navigate('/events')
     }
   }
 
   const handleSkip = () => {
-    if (user?.role === 'VENDOR') {
+    console.log('Skipping onboarding, user role:', user?.role)
+    
+    if (user?.role === 'ADMIN') {
+      navigate('/admin/dashboard')
+    } else if (user?.role === 'HOST') {
+      navigate('/host/dashboard')
+    } else if (user?.role === 'VENDOR') {
       navigate('/vendor/dashboard')
     } else {
       navigate('/events')

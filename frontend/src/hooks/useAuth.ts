@@ -6,38 +6,63 @@ import { useNavigate, useLocation } from 'react-router-dom'
 export const useAuth = () => {
   const { user, setUser, logout, isAuthenticated } = useAuthStore()
   const navigate = useNavigate()
-  const location = useLocation()
+  // const location = useLocation()
 
   const loginMutation = useMutation({
     mutationFn: authService.login,
     onSuccess: (data) => {
-      console.log('Login success, user role:', data.data.user.role)
+      console.log('=== LOGIN SUCCESS ===')
+      console.log('User data received:', data.data.user)
+      console.log('User role:', data.data.user.role)
+      
+      // Set user in store
       setUser(data.data.user)
       
-      const from = (location.state as any)?.from?.pathname
-      
-      // Redirect based on role
-      if (data.data.user.role === 'HOST') {
-        console.log('Redirecting to host dashboard')
-        navigate(from || '/host/dashboard')
-      } else if (data.data.user.role === 'VENDOR') {
-        console.log('Redirecting to vendor dashboard')
-        navigate(from || '/vendor/dashboard')
-      } else {
-        console.log('Redirecting to events')
-        navigate(from || '/events')
-      }
+      // Small delay to ensure state updates
+      setTimeout(() => {
+        const role = data.data.user.role
+        console.log('Redirecting based on role:', role)
+        // const from = (location.state as any)?.from?.pathname
+       
+        // Redirect based on role
+        if (role === 'ADMIN') {
+          console.log('→ Redirecting to /admin/dashboard')
+          navigate('/admin/dashboard')
+        } else if (role === 'HOST') {
+          console.log('→ Redirecting to /host/dashboard')
+          navigate('/host/dashboard')
+        } else if (role === 'VENDOR') {
+          console.log('→ Redirecting to /vendor/dashboard')
+          navigate('/vendor/dashboard')
+        } else {
+          console.log('→ Redirecting to /events')
+          navigate('/events')
+        }
+      }, 100)
     },
+    onError: (error) => {
+      console.error('Login error:', error)
+    }
   })
 
   const registerMutation = useMutation({
     mutationFn: authService.register,
     onSuccess: (data) => {
-      console.log('Registration success, user role:', data.data.user.role)
+      console.log('=== REGISTRATION SUCCESS ===')
+      console.log('User data received:', data.data.user)
+      console.log('User role:', data.data.user.role)
+      
       setUser(data.data.user)
+      
       // Always go to onboarding after signup
-      navigate('/onboarding')
+      setTimeout(() => {
+        console.log('→ Redirecting to /onboarding')
+        navigate('/onboarding')
+      }, 100)
     },
+    onError: (error) => {
+      console.error('Registration error:', error)
+    }
   })
 
   const { refetch: refetchUser } = useQuery({
