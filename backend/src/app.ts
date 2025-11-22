@@ -11,7 +11,7 @@ import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import eventRoutes from './routes/event.routes';
 import vendorRoutes from './routes/vendor.routes';
-import { request } from 'http';
+import adminRoutes from './routes/admin.routes';
 
 const app: Application = express();
 // Middleware
@@ -48,6 +48,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/vendor', vendorRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
