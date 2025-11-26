@@ -18,9 +18,10 @@ enum UserRole {
 
 enum EventStatus {
   DRAFT
-  PUBLISHED
-  CANCELLED
+  UPCOMING
+  ONGOING
   COMPLETED
+  CANCELLED
 }
 
 enum AttendeeStatus {
@@ -73,34 +74,111 @@ model Category {
 }
 
 model Event {
-  id            String        @id @default(uuid())
-  title         String
-  description   String
-  categoryId    String        @map("category_id")
-  category      Category      @relation(fields: [categoryId], references: [id])
-  hostId        String        @map("host_id")
-  host          User          @relation("EventHost", fields: [hostId], references: [id])
-  location      String // geography point
-  address       String
-  startDatetime DateTime      @map("start_datetime")
-  endDatetime   DateTime      @map("end_datetime")
-  capacity      Int?
-  price         Float?
-  images        String[]
-  tags          String[]
-  status        EventStatus   @default(DRAFT)
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
+  id              String        @id @default(uuid())
+  title           String
+  description     String
+  longDescription String?       @db.Text @map("long_description")
+  categoryId      String        @map("category_id")
+  category        Category      @relation(fields: [categoryId], references: [id])
+  hostId          String        @map("host_id")
+  host            User          @relation("EventHost", fields: [hostId], references: [id])
+  
+  // Location details
+  location        String        // geography point
+  address         String
+  latitude        Float?
+  longitude       Float?
+  
+  // Timing details
+  date            DateTime      // Event date
+  startTime       String        @map("start_time") // e.g., "09:00"
+  endTime         String        @map("end_time")   // e.g., "18:00"
+  startDatetime   DateTime      @map("start_datetime") // Full datetime (kept for compatibility)
+  endDatetime     DateTime      @map("end_datetime")   // Full datetime (kept for compatibility)
+  
+  // Capacity and pricing
+  capacity        Int?
+  price           Float?
+  currency        String        @default("KES")
+  
+  // Media and tags
+  image           String?       // Primary event image
+  images          String[]      // Additional images
+  tags            String[]
+  
+  status          EventStatus   @default(DRAFT)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
 
   // Relations
-  attendees     EventAttendee[]
-  serviceBids   ServiceBid[]
-  reviews       Review[]
+  attendees       EventAttendee[]
+  serviceBids     ServiceBid[]
+  reviews         Review[]
+  faqs            EventFaq[]
+  features        EventFeature[]
+  scheduleItems   ScheduleItem[]
+  eventTags       EventTag[]
 
   @@index([location])
   @@index([startDatetime])
+  @@index([date])
   @@index([categoryId])
+  @@index([status])
   @@map("events")
+}
+
+model EventFaq {
+  id        String   @id @default(uuid())
+  question  String
+  answer    String   @db.Text
+  order     Int      @default(0)
+  
+  eventId   String   @map("event_id")
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([eventId])
+  @@map("event_faqs")
+}
+
+model EventFeature {
+  id        String   @id @default(uuid())
+  name      String
+  icon      String?  // Optional icon name/class
+  
+  eventId   String   @map("event_id")
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@map("event_features")
+}
+
+model ScheduleItem {
+  id        String   @id @default(uuid())
+  time      String   // e.g., "09:00 AM"
+  activity  String
+  description String? // Optional detailed description
+  order     Int      @default(0)
+  
+  eventId   String   @map("event_id")
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@map("schedule_items")
+}
+
+model EventTag {
+  id        String   @id @default(uuid())
+  name      String
+  
+  eventId   String   @map("event_id")
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, name]) // Prevent duplicate tags for same event
+  @@index([eventId])
+  @@index([name])
+  @@map("event_tags")
 }
 
 model EventAttendee {
@@ -113,6 +191,8 @@ model EventAttendee {
   createdAt DateTime       @default(now()) @map("created_at")
 
   @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
   @@map("event_attendees")
 }
 
@@ -132,6 +212,7 @@ model VendorService {
   // Relations
   bids         ServiceBid[]
 
+  @@index([vendorId])
   @@map("vendor_services")
 }
 
@@ -148,6 +229,9 @@ model ServiceBid {
   status    BidStatus @default(PENDING)
   createdAt DateTime  @default(now()) @map("created_at")
 
+  @@index([eventId])
+  @@index([vendorId])
+  @@index([serviceId])
   @@map("service_bids")
 }
 
@@ -157,10 +241,12 @@ model Review {
   event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   userId    String   @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  rating    Int // 1-5
+  rating    Int      // 1-5
   comment   String?
   createdAt DateTime @default(now()) @map("created_at")
 
   @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
   @@map("reviews")
 }
