@@ -17,6 +17,9 @@ export const eventService = {
     search?: string
     page?: number
     limit?: number
+    status?: string
+    minPrice?: number
+    maxPrice?: number
   }): Promise<EventsResponse> {
     const response = await api.get<ApiResponse<EventsResponse>>('/events', { params })
     return response.data.data!

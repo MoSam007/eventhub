@@ -10,31 +10,80 @@ export interface User {
   createdAt: string
 }
 
+export interface EventHost {
+  id: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  profilePicture?: string;
+}
+
+export interface EventFaq {
+  id: string;
+  question: string;
+  answer: string;
+  order: number;
+}
+
+export interface EventFeature {
+  id: string;
+  name: string;
+}
+
+export interface ScheduleItem {
+  id: string;
+  time: string;
+  activity: string;
+  order: number;
+}
+
+export interface EventTag {
+  id: string;
+  name: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  icon?: string;
+}
+
 export interface Event {
-  id: string
-  title: string
-  description: string
-  categoryId: string
-  category?: Category
-  hostId: string
-  host?: {
-    id: string
-    fullName: string
-    profilePicture?: string
-  }
-  location: string
-  address: string
-  startDatetime: string
-  endDatetime: string
-  capacity?: number
-  price?: number
-  images: string[]
-  tags: string[]
-  status: 'DRAFT' | 'PUBLISHED' | 'CANCELLED' | 'COMPLETED'
-  createdAt: string
-  _count?: {
-    attendees: number
-  }
+  id: string;
+  title: string;
+  description: string;
+  longDescription?: string;
+  categoryId: string;
+  category?: Category;
+  hostId: string;
+  host?: EventHost;
+  location: string;
+  address: string;
+  latitude?: number;
+  longitude?: number;
+  startDatetime: string;
+  endDatetime: string;
+  date?: string;
+  startTime?: string;
+  endTime?: string;
+  capacity?: number;
+  price?: number;
+  currency?: string;
+  image?: string;
+  images: string[];
+  tags: string[];
+  status: string;
+  createdAt: string;
+  updatedAt?: string;
+  
+  // Related data
+  faqs?: EventFaq[];
+  features?: EventFeature[];
+  scheduleItems?: ScheduleItem[];
+  eventTags?: EventTag[];
+  registered?: number;
+  spotsLeft?: number;
 }
 
 export interface Category {
