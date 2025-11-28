@@ -25,8 +25,9 @@ export const eventService = {
     return response.data.data!
   },
 
-  async getEventById(id: string): Promise<Event> {
-    const response = await api.get<ApiResponse<{ event: Event }>>(`/events/${id}`)
+  // 🔥 One universal fetcher (slug OR id)
+  async getEvent(slugOrId: string): Promise<Event> {
+    const response = await api.get<ApiResponse<{ event: Event }>>(`/events/${slugOrId}`)
     return response.data.data!.event
   },
 

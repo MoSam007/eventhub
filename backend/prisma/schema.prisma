@@ -75,6 +75,7 @@ model Category {
 
 model Event {
   id              String        @id @default(uuid())
+  slug            String        @unique
   title           String
   description     String
   longDescription String?       @db.Text @map("long_description")
@@ -91,8 +92,8 @@ model Event {
   
   // Timing details
   date            DateTime      // Event date
-  startTime       String        @map("start_time") // e.g., "09:00"
-  endTime         String        @map("end_time")   // e.g., "18:00"
+  startTime       String        @map("start_time") 
+  endTime         String        @map("end_time")   
   startDatetime   DateTime      @map("start_datetime") // Full datetime (kept for compatibility)
   endDatetime     DateTime      @map("end_datetime")   // Full datetime (kept for compatibility)
   

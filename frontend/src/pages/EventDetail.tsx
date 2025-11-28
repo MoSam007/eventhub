@@ -10,7 +10,7 @@ import { eventService } from '../services/event.service';
 import { Event } from '../types';
 
 const EventDetailPage = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState('overview');
@@ -20,9 +20,9 @@ const EventDetailPage = () => {
 
   // Fetch event data
   const { data: event, isLoading, error } = useQuery<Event>({
-    queryKey: ['event', id],
-    queryFn: () => eventService.getEventById(id!),
-    enabled: !!id,
+    queryKey: ['event', slug],
+    queryFn: () => eventService.getEvent(slug!),
+    enabled: !!slug,
   });
 
   // Loading state

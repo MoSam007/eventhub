@@ -51,6 +51,7 @@ export interface Category {
 
 export interface Event {
   id: string;
+  slug: string;
   title: string;
   description: string;
   longDescription?: string;

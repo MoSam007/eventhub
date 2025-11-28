@@ -30,5 +30,5 @@ yarn-error.log*
 *.swo
 
 # Prisma
-prisma/migrations/
+backend/prisma/migrations/
 seed.ts

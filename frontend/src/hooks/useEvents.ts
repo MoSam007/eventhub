@@ -15,51 +15,56 @@ export const useEvents = (params: EventQueryParams = {}) => {
   return useQuery({
     queryKey: ['events', params],
     queryFn: () => eventService.getAllEvents(params),
-    staleTime: 60_000, // 1 minute
-    retry: 1,
+    // Disable caching for debugging
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnWindowFocus: false,
   })
 }
 
-export const useEvent = (id: string | undefined) => {
+// slug OR uuid supported
+export const useEvent = (slugOrId: string | undefined) => {
   return useQuery({
-    queryKey: ['event', id],
-    queryFn: () => eventService.getEventById(id!),
-    enabled: !!id,
+    queryKey: ['event', slugOrId],
+    queryFn: () => eventService.getEvent(slugOrId!),
+    enabled: !!slugOrId,
     staleTime: 60_000,
   })
 }
 
 export const useCreateEvent = () => {
-  const queryClient = useQueryClient()
+  const qc = useQueryClient()
 
   return useMutation({
     mutationFn: eventService.createEvent,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] })
+    onSuccess: (newEvent) => {
+      qc.invalidateQueries({ queryKey: ['events'] })
+      qc.invalidateQueries({ queryKey: ['event', newEvent.slug] })
     },
   })
 }
 
 export const useUpdateEvent = () => {
-  const queryClient = useQueryClient()
+  const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: (payload: { id: string; data: any }) =>
-      eventService.updateEvent(payload.id, payload.data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['events'] })
-      queryClient.invalidateQueries({ queryKey: ['event', id] })
+    mutationFn: (payload: { slugOrId: string; data: any }) =>
+      eventService.updateEvent(payload.slugOrId, payload.data),
+
+    onSuccess: (updatedEvent) => {
+      qc.invalidateQueries({ queryKey: ['events'] })
+      qc.invalidateQueries({ queryKey: ['event', updatedEvent.slug] })
     },
   })
 }
 
 export const useDeleteEvent = () => {
-  const queryClient = useQueryClient()
+  const qc = useQueryClient()
 
   return useMutation({
     mutationFn: eventService.deleteEvent,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] })
+      qc.invalidateQueries({ queryKey: ['events'] })
     },
   })
 }

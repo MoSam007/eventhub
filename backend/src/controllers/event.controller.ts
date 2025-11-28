@@ -127,67 +127,49 @@ export const getAllEvents = async (req: Request, res: Response, next: NextFuncti
  * GET EVENT BY ID or SLUG
  * -----------------------------------------------------
  */
+const isUUID = (value: string) =>
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[4][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(value)
+
 export const getEventById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params
+    const { id } = req.params;
 
     const event = await prisma.event.findFirst({
       where: {
         OR: [
-          { id },
-          // { slug: id } // allow slug-based URLs
+          { id: id },
+          { slug: id }
         ]
       },
       include: {
         category: true,
         host: {
-          select: {
-            id: true,
-            fullName: true,
-            profilePicture: true,
-            email: true
-          }
+          select: { id: true, fullName: true, profilePicture: true, email: true }
         },
         attendees: {
           include: {
-            user: {
-              select: {
-                id: true,
-                fullName: true,
-                profilePicture: true
-              }
-            }
+            user: { select: { id: true, fullName: true, profilePicture: true } }
           }
         },
         reviews: {
           include: {
-            user: {
-              select: {
-                id: true,
-                fullName: true,
-                profilePicture: true
-              }
-            }
+            user: { select: { id: true, fullName: true, profilePicture: true } }
           }
-        }
+        },
+        faqs: true,
+        features: true,
+        scheduleItems: true,
+        eventTags: true
       }
-    })
+    });
 
-    if (!event) {
-      throw new AppError('Event not found', 404)
-    }
+    if (!event) throw new AppError("Event not found", 404);
 
-    res.status(200).json({
-      status: 'success',
-      data: { event }
-    })
-
-  } catch (error) {
-    next(error)
+    res.status(200).json({ status: "success", data: { event } });
+  } catch (err) {
+    next(err);
   }
-}
-
-
+};
 
 /**
  * -----------------------------------------------------
@@ -199,39 +181,38 @@ export const createEvent = async (req: Request, res: Response, next: NextFunctio
     const userId = req.user!.id
     const eventData = req.body
 
-    const slug = slugify(eventData.title, { lower: true, strict: true }) +
-      '-' +
-      Math.random().toString(36).substring(2, 7)
+    const baseSlug = slugify(eventData.title)
+    let slug = baseSlug
+
+    // ensure unique slug
+    let exists = await prisma.event.findUnique({ where: { slug } })
+    let counter = 1
+    while (exists) {
+      slug = `${baseSlug}-${counter++}`
+      exists = await prisma.event.findUnique({ where: { slug } })
+    }
 
     const event = await prisma.event.create({
       data: {
         ...eventData,
         slug,
-        hostId: userId
+        hostId: userId,
       },
       include: {
         category: true,
-        host: {
-          select: {
-            id: true,
-            fullName: true,
-            profilePicture: true
-          }
-        }
-      }
+        host: { select: { id: true, fullName: true, profilePicture: true } },
+      },
     })
 
     res.status(201).json({
       status: 'success',
       message: 'Event created successfully',
-      data: { event }
+      data: { event },
     })
-
   } catch (error) {
     next(error)
   }
 }
-
 
 
 /**
@@ -245,42 +226,42 @@ export const updateEvent = async (req: Request, res: Response, next: NextFunctio
     const userId = req.user!.id
 
     const existingEvent = await prisma.event.findUnique({ where: { id } })
-
-    if (!existingEvent) {
-      throw new AppError('Event not found', 404)
-    }
-
-    if (existingEvent.hostId !== userId) {
+    if (!existingEvent) throw new AppError('Event not found', 404)
+    if (existingEvent.hostId !== userId)
       throw new AppError('Not authorized to update this event', 403)
-    }
 
-    // Regenerate slug if title changed
-    let payload = req.body
-    if (payload.title && payload.title !== existingEvent.title) {
-      payload.slug = slugify(payload.title, { lower: true, strict: true }) +
-        '-' +
-        Math.random().toString(36).substring(2, 7)
+    let updates = req.body
+
+    // if title changed -> regenerate slug
+    if (updates.title && updates.title !== existingEvent.title) {
+      const baseSlug = slugify(updates.title)
+      let slug = baseSlug
+      let exists = await prisma.event.findUnique({ where: { slug } })
+      let counter = 1
+      
+      while (exists && exists.id !== id) {
+        slug = `${baseSlug}-${counter++}`
+        exists = await prisma.event.findUnique({ where: { slug } })
+      }
+
+      updates.slug = slug
     }
 
     const event = await prisma.event.update({
       where: { id },
-      data: payload,
-      include: {
-        category: true
-      }
+      data: updates,
+      include: { category: true },
     })
 
     res.status(200).json({
       status: 'success',
       message: 'Event updated successfully',
-      data: { event }
+      data: { event },
     })
-
   } catch (error) {
     next(error)
   }
 }
-
 
 
 /**
