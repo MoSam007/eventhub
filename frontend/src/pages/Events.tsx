@@ -1,12 +1,20 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Search } from 'lucide-react'
 import EventList from '../components/events/EventList'
 import { useEvents } from '../hooks/useEvents'
+import { useSearchParams } from 'react-router-dom'
+
 
 export default function Events() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [page, setPage] = useState(1)
+  const [searchParams] = useSearchParams()
+
+  useEffect(() => {
+    setSearchQuery(searchParams.get('search') || '')
+    setSelectedCategory(searchParams.get('category') || '')
+  }, [searchParams])
 
   const { data, isLoading, isFetching } = useEvents({
     search: searchQuery,
@@ -58,7 +66,9 @@ export default function Events() {
               All Events
             </button>
 
-            {['tech', 'music', 'food', 'social', 'cultural'].map((cat) => (
+            {['tech', 'music', 'food', 'social', 'cultural', 'hiking', 
+              'biking', 'clubbing', 'networking'
+            ].map((cat) => (
               <button
                 key={cat}
                 onClick={() => {

@@ -16,6 +16,7 @@ export const getAllEvents = async (req: Request, res: Response, next: NextFuncti
       category = '',
       search = '',
       status = '',
+      tags = '',
       minPrice,
       maxPrice,
       sort = 'date_asc',
@@ -30,32 +31,56 @@ export const getAllEvents = async (req: Request, res: Response, next: NextFuncti
     // ------------------------------
     // 1️⃣ Build Safe Prisma Filters
     // ------------------------------
-    const where: Prisma.EventWhereInput = {
-      status: status as EventStatus || undefined
+    const where: Prisma.EventWhereInput = {}
+
+    // Category by slug
+    if (category) {
+      where.category = {
+        slug: String(category),
+      }
     }
 
-    // Category filter
-    if (category) where.categoryId = String(category)
-
-    // Search filter
+    // Search keywords
     if (search) {
       where.OR = [
         { title: { contains: String(search), mode: 'insensitive' } },
-        { description: { contains: String(search), mode: 'insensitive' } }
+        { description: { contains: String(search), mode: 'insensitive' } },
       ]
     }
 
-    // Status filter (safe)
+    // Tags
+    if (tags) {
+      const tagList = String(tags).split(',')
+      where.eventTags = {
+        some: {
+          name: { in: tagList }
+        }
+      }
+    }
+
+    // Location
+    if (req.query.location) {
+      const loc = String(req.query.location)
+
+      where.OR = [
+        ...(where.OR || []),
+        { location: { contains: loc, mode: 'insensitive' } },
+        { address: { contains: loc, mode: 'insensitive' } },
+      ]
+    }
+
+    // Status
     if (status && Object.values(EventStatus).includes(status as EventStatus)) {
       where.status = status as EventStatus
     }
 
-    // Price range
+    // Price
     if (minPrice || maxPrice) {
       where.price = {}
       if (minPrice) where.price.gte = Number(minPrice)
       if (maxPrice) where.price.lte = Number(maxPrice)
     }
+
 
     // ------------------------------
     // 2️⃣ Sorting

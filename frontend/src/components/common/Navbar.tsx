@@ -2,11 +2,26 @@ import { Link } from 'react-router-dom'
 import { Search, MapPin, Menu, HelpCircle } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
+import { useNavigate } from 'react-router-dom'
+
+
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const { isAuthenticated, logout } = useAuthStore()
+  const navigate = useNavigate()
+  const [keyword, setKeyword] = useState('')
+  const [location, setLocation] = useState('')
+  
+  const handleSearch = () => {
+    const params = new URLSearchParams()
+
+    if (keyword) params.append('search', keyword)
+    if (location) params.append('location', location)
+
+    navigate(`/events?${params.toString()}`)
+  }
 
   return (
     <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200 h-20">
@@ -24,6 +39,8 @@ export default function Navbar() {
                 <input
                   type="text"
                   placeholder="Discover events"
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
                   className="w-full text-sm text-gray-600 placeholder-gray-400 focus:outline-none bg-transparent"
                 />
               </div>
@@ -31,11 +48,14 @@ export default function Navbar() {
                 <MapPin size={18} className="text-gray-400 mr-2 flex-shrink-0" />
                 <input
                   type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
                   placeholder="Find Location"
                   className="w-full text-sm text-gray-600 placeholder-gray-400 focus:outline-none bg-transparent"
                 />
               </div>
-              <button className="px-4 hover:bg-gray-50 transition-colors border-l border-gray-300">
+              
+              <button onClick={handleSearch} className="px-4 hover:bg-gray-50 transition-colors border-l border-gray-300">
                 <Search size={20} className="text-gray-600" />
               </button>
             </div>
