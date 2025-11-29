@@ -15,8 +15,7 @@ export const useEvents = (params: EventQueryParams = {}) => {
   return useQuery({
     queryKey: ['events', params],
     queryFn: () => eventService.getAllEvents(params),
-    // Disable caching for debugging
-    staleTime: 0,
+    staleTime: 60_000,
     gcTime: 0,
     refetchOnWindowFocus: false,
   })
