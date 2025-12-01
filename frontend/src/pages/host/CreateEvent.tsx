@@ -228,13 +228,7 @@ export default function CreateEvent() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
                 <select value={formData.categoryId} onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" required>
-                  <option value="">Select category</option><option value="technology">Technology</option>
-                  <option value="music">Music</option>
-                  <option value="food">Food</option>
-                  <option value="business">Business</option>
-                  <option value="sports">Sports</option>
-                  <option value="arts">Arts</option>
-                  <option value="clubbing">Clubbing</option>
+                  <option value="">Select category</option>
                   {categories.map((cat: any) => (
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
