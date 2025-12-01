@@ -240,6 +240,107 @@ export const createEvent = async (req: Request, res: Response, next: NextFunctio
 }
 
 
+export const createEventWithDetails = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id
+    const { 
+      title, description, longDescription, categoryId, location, address, 
+      latitude, longitude, date, startTime, endTime, capacity, price, currency,
+      images, tags, features, faqs, scheduleItems, status 
+    } = req.body
+
+    // Generate unique slug
+    const baseSlug = slugify(title, { lower: true, strict: true })
+    let slug = baseSlug
+    let exists = await prisma.event.findUnique({ where: { slug } })
+    let counter = 1
+    while (exists) {
+      slug = `${baseSlug}-${counter++}`
+      exists = await prisma.event.findUnique({ where: { slug } })
+    }
+
+    // Parse date and create datetime objects
+    const eventDate = new Date(date)
+    const [startHour, startMin] = startTime.split(':')
+    const [endHour, endMin] = endTime.split(':')
+    
+    const startDatetime = new Date(eventDate)
+    startDatetime.setHours(parseInt(startHour), parseInt(startMin))
+    
+    const endDatetime = new Date(eventDate)
+    endDatetime.setHours(parseInt(endHour), parseInt(endMin))
+
+    // Create event with all related data
+    const event = await prisma.event.create({
+      data: {
+        slug,
+        title,
+        description,
+        longDescription,
+        categoryId,
+        hostId: userId,
+        location,
+        address,
+        latitude: latitude ? parseFloat(latitude) : null,
+        longitude: longitude ? parseFloat(longitude) : null,
+        date: eventDate,
+        startTime,
+        endTime,
+        startDatetime,
+        endDatetime,
+        capacity: capacity ? parseInt(capacity) : null,
+        price: price ? parseFloat(price) : 0,
+        currency: currency || 'KES',
+        image: images?.[0] || null,
+        images: images || [],
+        tags: tags || [],
+        status: status || 'DRAFT',
+        faqs: {
+          create: (faqs || []).map((faq: any, index: number) => ({
+            question: faq.question,
+            answer: faq.answer,
+            order: index
+          }))
+        },
+        features: {
+          create: (features || []).map((feature: any) => ({
+            name: feature.name || feature
+          }))
+        },
+        scheduleItems: {
+          create: (scheduleItems || []).map((item: any, index: number) => ({
+            time: item.time,
+            activity: item.activity,
+            order: index
+          }))
+        },
+        eventTags: {
+          create: (tags || []).map((tag: string) => ({
+            name: tag
+          }))
+        }
+      },
+      include: {
+        category: true,
+        host: { select: { id: true, fullName: true, email: true } },
+        faqs: true,
+        features: true,
+        scheduleItems: true,
+        eventTags: true
+      }
+    })
+
+    res.status(201).json({
+      status: 'success',
+      message: 'Event created successfully',
+      data: { event }
+    })
+  } catch (error) {
+    console.error('Create event error:', error)
+    next(error)
+  }
+}
+
 /**
  * -----------------------------------------------------
  * UPDATE EVENT — Regenerate slug if title changes

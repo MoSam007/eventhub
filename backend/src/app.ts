@@ -10,6 +10,8 @@ import { rateLimiter } from './middleware/rateLimiter.middleware';
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import eventRoutes from './routes/event.routes';
+import categoryRoutes from './routes/category.routes';
+import uploadRoutes from './routes/upload.routes';
 import vendorRoutes from './routes/vendor.routes';
 import adminRoutes from './routes/admin.routes';
 
@@ -21,8 +23,9 @@ app.use(cors({
   credentials: true
 }));
 app.use(morgan(env.NODE_ENV === 'development' ? 'dev' : 'combined'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Increase body parser limits to allow larger payloads (e.g., base64 images)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Rate limiting
 app.use('/api', rateLimiter);
@@ -47,6 +50,8 @@ app.get('/health', (req: Request, res: Response) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/upload', uploadRoutes);
 app.use('/api/vendor', vendorRoutes);
 app.use('/api/admin', adminRoutes);
 

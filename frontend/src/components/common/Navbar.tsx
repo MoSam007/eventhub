@@ -70,16 +70,10 @@ export default function Navbar() {
               Events
             </Link>
             <Link
-              to="/vendor/create-event"
+              to="/host/create-event"
               className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
             >
               Create Events
-            </Link>
-            <Link
-              to="/vendor/dashboard"
-              className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
-            >
-              Vendors
             </Link>
 
             {/* Help Menu */}
@@ -119,6 +113,22 @@ export default function Navbar() {
                     >
                       <div className="font-medium text-gray-900 text-sm">Find Events</div>
                       <div className="text-xs text-gray-500 mt-0.5">FAQs on how to find events around you</div>
+                    </Link>
+                    <Link
+                      to="/help/find-vendors"
+                      className="block px-4 py-3 hover:bg-gray-50 transition-colors"
+                      onClick={() => setIsHelpOpen(false)}
+                    >
+                      <div className="font-medium text-gray-900 text-sm">Find Vendors</div>
+                      <div className="text-xs text-gray-500 mt-0.5">FAQs on how to find vendors around you</div>
+                    </Link>
+                    <Link
+                      to="/help/host-events"
+                      className="block px-4 py-3 hover:bg-gray-50 transition-colors"
+                      onClick={() => setIsHelpOpen(false)}
+                    >
+                      <div className="font-medium text-gray-900 text-sm">Host Events</div>
+                      <div className="text-xs text-gray-500 mt-0.5">How to host your own events</div>
                     </Link>
                     <div className="border-t border-gray-100 mt-2 pt-2">
                       {isAuthenticated ? (

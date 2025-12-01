@@ -5,6 +5,7 @@ import {
   createEvent,
   updateEvent,
   deleteEvent,
+  createEventWithDetails,
 } from '../controllers/event.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 import { eventValidation } from '../utils/validators';
@@ -17,7 +18,13 @@ router.get('/:id', getEventById);
 router.post(
   '/',
   authenticate,
-  authorize('VENDOR', 'ADMIN'),
+  authorize('HOST', 'ADMIN'),
+  createEventWithDetails
+)
+router.post(
+  '/',
+  authenticate,
+  authorize('HOST', 'ADMIN'),
   eventValidation,
   validate,
   createEvent

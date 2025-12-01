@@ -31,9 +31,40 @@ export const eventService = {
     return response.data.data!.event
   },
 
-  async createEvent(eventData: Partial<Event>): Promise<Event> {
+  async createEvent(eventData: {
+    title: string
+    description: string
+    longDescription?: string
+    categoryId: string
+    location: string
+    address: string
+    latitude?: number
+    longitude?: number
+    date: string
+    startTime: string
+    endTime: string
+    capacity?: number
+    price?: number
+    currency?: string
+    images?: string[]
+    tags?: string[]
+    features?: Array<{ name: string }>
+    faqs?: Array<{ question: string; answer: string }>
+    scheduleItems?: Array<{ time: string; activity: string }>
+    status?: string
+  }): Promise<Event> {
     const response = await api.post<ApiResponse<{ event: Event }>>('/events', eventData)
     return response.data.data!.event
+  },
+
+  async uploadEventImages(files: File[]) {
+    const formData = new FormData()
+    files.forEach(file => formData.append('images', file))
+    
+    const response = await api.post('/upload/event-images', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    return response.data
   },
 
   async updateEvent(id: string, eventData: Partial<Event>): Promise<Event> {

@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { 
   MapPin, Users, DollarSign, Calendar, Clock, Upload, X, Plus, 
-  Image as ImageIcon, Tag, List, HelpCircle, Check
+  Image as ImageIcon, Tag, List, HelpCircle, Check, Sparkles
 } from 'lucide-react'
+import { AIEventAssistant } from '../../components/events/AIEventAssistant'
+import { eventService } from '../../services/event.service'
+import api from '../../services/api'
 
 interface FAQ { id: string; question: string; answer: string }
 interface ScheduleItem { id: string; time: string; activity: string }
@@ -11,11 +15,14 @@ interface Feature { id: string; name: string }
 
 export default function CreateEvent() {
   const navigate = useNavigate()
-  const [step, setStep] = useState(1)
+  const [step, setStep] = useState(0) // 0 = AI assistant, 1-5 = form steps
+  const [useAI, setUseAI] = useState(false)
+  const [showAIAssistant, setShowAIAssistant] = useState(true)
   const [previewImages, setPreviewImages] = useState<string[]>([])
+  const [imageFiles, setImageFiles] = useState<File[]>([])
   
   const [formData, setFormData] = useState({
-    title: '', description: '', longDescription: '', category: '', address: '', location: '',
+    title: '', description: '', longDescription: '', categoryId: '', address: '', location: '',
     latitude: '', longitude: '', date: '', startTime: '', endTime: '', capacity: '',
     price: '', currency: 'KES', tags: [] as string[], features: [] as Feature[],
     faqs: [] as FAQ[], scheduleItems: [] as ScheduleItem[]
@@ -25,6 +32,51 @@ export default function CreateEvent() {
   const [currentFeature, setCurrentFeature] = useState('')
   const [currentFaq, setCurrentFaq] = useState({ question: '', answer: '' })
   const [currentSchedule, setCurrentSchedule] = useState({ time: '', activity: '' })
+
+  // Fetch categories
+  const { data: categoriesData } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const response = await api.get('/categories')
+      return response.data
+    }
+  })
+
+  const categories = categoriesData?.data?.categories || []
+
+  // Create event mutation
+  const createEventMutation = useMutation({
+    mutationFn: async (data: any) => {
+      // Upload images first if any
+      let uploadedImages: string[] = []
+      if (imageFiles.length > 0) {
+        const uploadResult = await eventService.uploadEventImages(imageFiles)
+        uploadedImages = uploadResult.data.urls || previewImages
+      } else {
+        uploadedImages = previewImages
+      }
+
+      // Prepare event data
+      const eventData = {
+        ...data,
+        images: uploadedImages,
+        features: data.features.map((f: Feature) => ({ name: f.name })),
+        latitude: data.latitude ? parseFloat(data.latitude) : undefined,
+        longitude: data.longitude ? parseFloat(data.longitude) : undefined,
+        capacity: data.capacity ? parseInt(data.capacity) : undefined,
+        price: data.price ? parseFloat(data.price) : 0,
+      }
+
+      return eventService.createEvent(eventData)
+    },
+    onSuccess: (createdEvent) => {
+      const slugOrId = createdEvent?.slug || createdEvent?.id || ''
+      navigate(`/events/${slugOrId}`)
+    },
+    onError: (error: any) => {
+      alert(error.response?.data?.message || 'Failed to create event')
+    }
+  })
 
   const generateTags = () => {
     const text = `${formData.title} ${formData.description}`.toLowerCase()
@@ -38,19 +90,24 @@ export default function CreateEvent() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files) {
-      const newImages: string[] = []
-      Array.from(files).forEach(file => {
+      const filesArray = Array.from(files)
+      setImageFiles(prev => [...prev, ...filesArray])
+      
+      filesArray.forEach(file => {
         const reader = new FileReader()
         reader.onloadend = () => {
-          newImages.push(reader.result as string)
-          if (newImages.length === files.length) setPreviewImages(prev => [...prev, ...newImages])
+          setPreviewImages(prev => [...prev, reader.result as string])
         }
         reader.readAsDataURL(file)
       })
     }
   }
 
-  const removeImage = (index: number) => setPreviewImages(prev => prev.filter((_, i) => i !== index))
+  const removeImage = (index: number) => {
+    setPreviewImages(prev => prev.filter((_, i) => i !== index))
+    setImageFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
   const addTag = () => {
     if (currentTag && !formData.tags.includes(currentTag)) {
       setFormData(prev => ({ ...prev, tags: [...prev.tags, currentTag] }))
@@ -82,21 +139,58 @@ export default function CreateEvent() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Creating event:', formData, 'Images:', previewImages)
-    navigate('/host/dashboard')
+    createEventMutation.mutate(formData)
   }
 
   const validateStep = () => {
-    if (step === 1) return formData.title && formData.description && formData.category
+    if (step === 1) return formData.title && formData.description && formData.categoryId
     if (step === 2) return formData.address && formData.date && formData.startTime && formData.endTime
     return true
+  }
+
+  // Show AI Assistant first
+  if (showAIAssistant && step === 0) {
+    return (
+      <AIEventAssistant
+        onUseAI={() => {
+          setUseAI(true)
+          setShowAIAssistant(false)
+          setStep(1)
+        }}
+        onManual={() => {
+          setUseAI(false)
+          setShowAIAssistant(false)
+          setStep(1)
+        }}
+      />
+    )
   }
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-4xl font-bold text-gray-900">Create New Event</h1>
-        <p className="text-sm sm:text-base text-gray-600 mt-2">Fill in the details to create your event</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl sm:text-4xl font-bold text-gray-900">Create New Event</h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-2">
+              {useAI ? (
+                <span className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-purple-600" />
+                  AI-Assisted Creation Mode
+                </span>
+              ) : (
+                'Fill in the details to create your event'
+              )}
+            </p>
+          </div>
+          <button
+            onClick={() => setShowAIAssistant(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span className="hidden sm:inline">AI Assistant</span>
+          </button>
+        </div>
       </div>
 
       {/* Progress */}
@@ -116,6 +210,10 @@ export default function CreateEvent() {
 
       <div className="bg-white rounded-xl shadow-lg border border-gray-200">
         <form onSubmit={handleSubmit} className="p-4 sm:p-8">
+          {/* Steps 1-4 remain the same as before... */}
+          {/* For brevity, keeping same structure */}
+          
+          {/* Step 1: Basic Info */}
           {step === 1 && (
             <div className="space-y-4 sm:space-y-6">
               <h2 className="text-lg sm:text-xl font-bold text-gray-900">Basic Information</h2>
@@ -129,14 +227,17 @@ export default function CreateEvent() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
-                <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" required>
-                  <option value="">Select category</option>
-                  <option value="technology">Technology</option>
+                <select value={formData.categoryId} onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" required>
+                  <option value="">Select category</option><option value="technology">Technology</option>
                   <option value="music">Music</option>
                   <option value="food">Food</option>
                   <option value="business">Business</option>
                   <option value="sports">Sports</option>
                   <option value="arts">Arts</option>
+                  <option value="clubbing">Clubbing</option>
+                  {categories.map((cat: any) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
                 </select>
               </div>
               <div className="flex justify-end pt-4">
@@ -144,7 +245,6 @@ export default function CreateEvent() {
               </div>
             </div>
           )}
-
           {step === 2 && (
             <div className="space-y-4 sm:space-y-6">
               <h2 className="text-lg sm:text-xl font-bold text-gray-900">Location & Time</h2>
@@ -318,7 +418,7 @@ export default function CreateEvent() {
               <div className="bg-gray-50 rounded-lg p-4 sm:p-6 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div><span className="text-gray-600 text-sm">Title:</span><p className="font-medium">{formData.title}</p></div>
-                  <div><span className="text-gray-600 text-sm">Category:</span><p className="font-medium capitalize">{formData.category}</p></div>
+                  <div><span className="text-gray-600 text-sm">Category:</span><p className="font-medium capitalize">{categories.find((c: any) => c.id === formData.categoryId)?.name || formData.categoryId}</p></div>
                   <div><span className="text-gray-600 text-sm">Location:</span><p className="font-medium">{formData.location}</p></div>
                   <div><span className="text-gray-600 text-sm">Date:</span><p className="font-medium">{formData.date}</p></div>
                   <div><span className="text-gray-600 text-sm">Time:</span><p className="font-medium">{formData.startTime} - {formData.endTime}</p></div>
