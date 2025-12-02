@@ -19,9 +19,11 @@ import NotFound from './pages/NotFound'
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard'
 import AdminUsers from './pages/admin/Users'
+import AdminManageEvents from './pages/admin/ManageEvents'
 
 // Host Pages
 import HostDashboard from './pages/host/Dashboard'
+import HostManageEvents from './pages/host/ManageEvents'
 import CreateEvent from './pages/host/CreateEvent'
 
 // Vendor Pages
@@ -81,10 +83,10 @@ function App() {
       >
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="users" element={<AdminUsers />} />
+        <Route path="events" element={<AdminManageEvents />} />
         <Route path="create-event" element={<CreateEvent />} />
         <Route path="hosts" element={<div>Hosts Management</div>} />
         <Route path="vendors" element={<div>Vendors Management</div>} />
-        <Route path="events" element={<div>Events Management</div>} />
         <Route path="settings" element={<div>Settings</div>} />
       </Route>
 
@@ -98,8 +100,8 @@ function App() {
         }
       >
         <Route path="dashboard" element={<HostDashboard />} />
+        <Route path="events" element={<HostManageEvents />} />
         <Route path="create-event" element={<CreateEvent />} />
-        <Route path="events" element={<div>My Events</div>} />
         <Route path="bids" element={<div>Vendor Bids</div>} />
         <Route path="settings" element={<div>Settings</div>} />
       </Route>
@@ -125,6 +127,5 @@ function App() {
     </Routes>
   )
 }
-
 
 export default App

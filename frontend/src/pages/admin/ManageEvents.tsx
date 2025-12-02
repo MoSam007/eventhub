@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { 
-  Search, Filter, Plus, Edit2, Trash2, Eye, MoreVertical, Calendar,
+  Search, Filter, Plus, Edit2, Trash2, Eye, Calendar,
   MapPin, Users, DollarSign, Clock, TrendingUp, AlertCircle, CheckCircle2,
-  XCircle, Loader2, RefreshCw, BarChart3
+  XCircle, Loader2, RefreshCw, BarChart3, User
 } from 'lucide-react'
+import { useAdminEvents } from '../../hooks/useEvents'
+import { useQueryClient, useMutation } from '@tanstack/react-query'
+import api from '../../services/api'
 
 interface Event {
   id: string
@@ -23,11 +25,12 @@ interface Event {
   currency: string
   status: string
   category: { id: string; name: string }
+  host?: { id: string; fullName: string; email: string }
   _count?: { attendees: number }
   createdAt: string
 }
 
-export default function ManageEvents() {
+export default function AdminManageEvents() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   
@@ -40,64 +43,48 @@ export default function ManageEvents() {
   const [newStatus, setNewStatus] = useState('')
   const [page, setPage] = useState(1)
 
-  // Fetch events
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['my-events', statusFilter, searchQuery, page],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '12',
-        ...(statusFilter !== 'all' && { status: statusFilter }),
-        ...(searchQuery && { search: searchQuery })
-      })
-      const response = await fetch(`/api/events/my-events?${params}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      })
-      if (!response.ok) throw new Error('Failed to fetch events')
-      return response.json()
-    }
+  // Fetch events using the admin hook
+  const { data, isLoading, error } = useAdminEvents({
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+    search: searchQuery || undefined,
+    page,
+    limit: 12,
   })
 
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (eventId: string) => {
-      const response = await fetch(`/api/events/${eventId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      })
-      if (!response.ok) throw new Error('Failed to delete event')
-      return response.json()
+      const response = await api.delete(`/events/${eventId}`)
+      return response.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['my-events'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-events'] })
       setShowDeleteModal(false)
       setSelectedEvent(null)
+    },
+    onError: (error: any) => {
+      alert(error.response?.data?.message || 'Failed to delete event')
     }
   })
 
   // Update status mutation
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const response = await fetch(`/api/events/${id}`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ status })
-      })
-      if (!response.ok) throw new Error('Failed to update status')
-      return response.json()
+      const response = await api.put(`/events/${id}`, { status })
+      return response.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['my-events'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-events'] })
       setShowStatusModal(false)
       setSelectedEvent(null)
+    },
+    onError: (error: any) => {
+      alert(error.response?.data?.message || 'Failed to update status')
     }
   })
 
-  const events = data?.data?.events || []
-  const pagination = data?.data?.pagination
+  const events = data?.events || []
+  const pagination = data?.pagination
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -128,13 +115,13 @@ export default function ManageEvents() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Manage Events</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Manage All Events</h1>
               <p className="text-sm text-gray-600 mt-1">
-                {pagination?.total || 0} total events
+                {pagination?.total || 0} total events across all hosts
               </p>
             </div>
             <button
-              onClick={() => navigate('/host/create-event')}
+              onClick={() => navigate('/admin/create-event')}
               className="flex items-center justify-center gap-2 bg-orange-600 text-white px-4 sm:px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-medium"
             >
               <Plus size={20} />
@@ -150,13 +137,19 @@ export default function ManageEvents() {
                 type="text"
                 placeholder="Search events..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setPage(1)
+                }}
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value)
+                setPage(1)
+              }}
               className="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
             >
               <option value="all">All Status</option>
@@ -198,7 +191,7 @@ export default function ManageEvents() {
             <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-3" />
             <p className="text-red-800 font-medium">Failed to load events</p>
             <button
-              onClick={() => queryClient.invalidateQueries({ queryKey: ['my-events'] })}
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-events'] })}
               className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
             >
               Try Again
@@ -214,14 +207,14 @@ export default function ManageEvents() {
             <p className="text-gray-600 mb-6">
               {searchQuery || statusFilter !== 'all' 
                 ? 'Try adjusting your filters' 
-                : 'Get started by creating your first event'}
+                : 'No events have been created yet'}
             </p>
             <button
-              onClick={() => navigate('/host/create-event')}
+              onClick={() => navigate('/admin/create-event')}
               className="inline-flex items-center gap-2 bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-medium"
             >
               <Plus size={20} />
-              Create Your First Event
+              Create First Event
             </button>
           </div>
         )}
@@ -229,7 +222,7 @@ export default function ManageEvents() {
         {/* Grid View */}
         {!isLoading && !error && events.length > 0 && view === 'grid' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {events.map((event: Event) => (
+            {events.map((event) => (
               <div key={event.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow group">
                 {/* Image */}
                 <div className="relative h-48 bg-gray-200 overflow-hidden">
@@ -246,18 +239,19 @@ export default function ManageEvents() {
                       {event.status}
                     </span>
                   </div>
-                  <div className="absolute top-3 right-3">
-                    <div className="relative">
-                      <button className="p-2 bg-white/90 backdrop-blur-sm rounded-lg hover:bg-white transition-colors">
-                        <MoreVertical size={18} className="text-gray-700" />
-                      </button>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Content */}
                 <div className="p-5">
-                  <div className="text-xs text-orange-600 font-semibold mb-2">{event.category.name}</div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-xs text-orange-600 font-semibold">{event.category?.name}</div>
+                    {event.host && (
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <User size={12} />
+                        <span className="truncate max-w-[100px]">{event.host.fullName}</span>
+                      </div>
+                    )}
+                  </div>
                   <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-orange-600 transition-colors">
                     {event.title}
                   </h3>
@@ -267,7 +261,7 @@ export default function ManageEvents() {
                   <div className="space-y-2 text-sm text-gray-600 mb-4">
                     <div className="flex items-center gap-2">
                       <Calendar size={16} className="text-gray-400" />
-                      <span>{new Date(event.date).toLocaleDateString()}</span>
+                      <span>{event.date ? new Date(event.date).toLocaleDateString() : 'N/A'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <MapPin size={16} className="text-gray-400" />
@@ -276,7 +270,7 @@ export default function ManageEvents() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Users size={16} className="text-gray-400" />
-                        <span>{event._count?.attendees || 0} registered</span>
+                        <span>{(event as Event)._count?.attendees || 0} registered</span>
                       </div>
                       {event.price ? (
                         <div className="flex items-center gap-1 text-orange-600 font-semibold">
@@ -299,7 +293,7 @@ export default function ManageEvents() {
                       View
                     </button>
                     <button
-                      onClick={() => navigate(`/host/events/${event.id}/edit`)}
+                      onClick={() => navigate(`/admin/events/${event.id}/edit`)}
                       className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors text-sm font-medium"
                     >
                       <Edit2 size={16} />
@@ -307,7 +301,7 @@ export default function ManageEvents() {
                     </button>
                     <button
                       onClick={() => {
-                        setSelectedEvent(event)
+                        setSelectedEvent(event as Event)
                         setShowStatusModal(true)
                       }}
                       className="px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
@@ -317,7 +311,7 @@ export default function ManageEvents() {
                     </button>
                     <button
                       onClick={() => {
-                        setSelectedEvent(event)
+                        setSelectedEvent(event as Event)
                         setShowDeleteModal(true)
                       }}
                       className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
@@ -340,6 +334,7 @@ export default function ManageEvents() {
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Event</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden xl:table-cell">Host</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Date</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Attendees</th>
@@ -347,7 +342,7 @@ export default function ManageEvents() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {events.map((event: Event) => (
+                  {events.map((event) => (
                     <tr key={event.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-4">
@@ -363,12 +358,20 @@ export default function ManageEvents() {
                           <div className="min-w-0">
                             <p className="text-sm font-semibold text-gray-900 truncate">{event.title}</p>
                             <p className="text-xs text-gray-500 truncate">{event.location}</p>
-                            <p className="text-xs text-orange-600 font-medium mt-1">{event.category.name}</p>
+                            <p className="text-xs text-orange-600 font-medium mt-1">{event.category?.name}</p>
                           </div>
                         </div>
                       </td>
+                      <td className="px-6 py-4 hidden xl:table-cell">
+                        {event.host && (
+                          <div>
+                            <p className="text-sm text-gray-900">{event.host.fullName}</p>
+                            <p className="text-xs text-gray-500">{event.host.email}</p>
+                          </div>
+                        )}
+                      </td>
                       <td className="px-6 py-4 hidden lg:table-cell">
-                        <div className="text-sm text-gray-900">{new Date(event.date).toLocaleDateString()}</div>
+                        <div className="text-sm text-gray-900">{event.date ? new Date(event.date).toLocaleDateString() : 'N/A'}</div>
                         <div className="text-xs text-gray-500">{event.startTime} - {event.endTime}</div>
                       </td>
                       <td className="px-6 py-4 hidden md:table-cell">
@@ -380,7 +383,7 @@ export default function ManageEvents() {
                       <td className="px-6 py-4 hidden md:table-cell">
                         <div className="flex items-center gap-2 text-sm text-gray-900">
                           <Users size={16} className="text-gray-400" />
-                          {event._count?.attendees || 0}
+                          {(event as Event)._count?.attendees || 0}
                           {event.capacity && ` / ${event.capacity}`}
                         </div>
                       </td>
@@ -394,7 +397,7 @@ export default function ManageEvents() {
                             <Eye size={18} />
                           </button>
                           <button
-                            onClick={() => navigate(`/host/events/${event.id}/edit`)}
+                            onClick={() => navigate(`/admin/events/${event.id}/edit`)}
                             className="p-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition-colors"
                             title="Edit"
                           >
@@ -402,7 +405,7 @@ export default function ManageEvents() {
                           </button>
                           <button
                             onClick={() => {
-                              setSelectedEvent(event)
+                              setSelectedEvent(event as Event)
                               setShowStatusModal(true)
                             }}
                             className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
@@ -412,7 +415,7 @@ export default function ManageEvents() {
                           </button>
                           <button
                             onClick={() => {
-                              setSelectedEvent(event)
+                              setSelectedEvent(event as Event)
                               setShowDeleteModal(true)
                             }}
                             className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
