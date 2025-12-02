@@ -145,7 +145,149 @@ export const getAllEvents = async (req: Request, res: Response, next: NextFuncti
   }
 }
 
+/**
+ * -----------------------------------------------------
+ * GET MY EVENTS (HOST) - Only events created by the authenticated host
+ * -----------------------------------------------------
+ */
+export const getMyEvents = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id
+    const {
+      search = '',
+      status = '',
+      page = '1',
+      limit = '12'
+    } = req.query
 
+    const pageNum = Number(page)
+    const limitNum = Number(limit)
+    const skip = (pageNum - 1) * limitNum
+
+    const where: Prisma.EventWhereInput = {
+      hostId: userId // Only events created by this host
+    }
+
+    if (status && status !== 'all') {
+      where.status = status as EventStatus
+    }
+
+    if (search) {
+      where.OR = [
+        { title: { contains: String(search), mode: 'insensitive' } },
+        { description: { contains: String(search), mode: 'insensitive' } }
+      ]
+    }
+
+    const [events, total] = await Promise.all([
+      prisma.event.findMany({
+        where,
+        skip,
+        take: limitNum,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          category: true,
+          _count: {
+            select: { attendees: true }
+          }
+        }
+      }),
+      prisma.event.count({ where })
+    ])
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        events,
+        pagination: {
+          total,
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(total / limitNum)
+        }
+      }
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+/**
+ * -----------------------------------------------------
+ * GET ALL EVENTS (ADMIN) - All events for admin management
+ * -----------------------------------------------------
+ */
+export const getAllEventsAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const {
+      search = '',
+      status = '',
+      categoryId = '',
+      page = '1',
+      limit = '12'
+    } = req.query
+
+    const pageNum = Number(page)
+    const limitNum = Number(limit)
+    const skip = (pageNum - 1) * limitNum
+
+    const where: Prisma.EventWhereInput = {}
+
+    if (status && status !== 'all') {
+      where.status = status as EventStatus
+    }
+
+    if (categoryId) {
+      where.categoryId = String(categoryId)
+    }
+
+    if (search) {
+      where.OR = [
+        { title: { contains: String(search), mode: 'insensitive' } },
+        { description: { contains: String(search), mode: 'insensitive' } }
+      ]
+    }
+
+    const [events, total] = await Promise.all([
+      prisma.event.findMany({
+        where,
+        skip,
+        take: limitNum,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          category: true,
+          host: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              profilePicture: true
+            }
+          },
+          _count: {
+            select: { attendees: true }
+          }
+        }
+      }),
+      prisma.event.count({ where })
+    ])
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        events,
+        pagination: {
+          total,
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(total / limitNum)
+        }
+      }
+    })
+  } catch (error) {
+    next(error)
+  }
+}
 
 /**
  * -----------------------------------------------------
@@ -350,17 +492,21 @@ export const updateEvent = async (req: Request, res: Response, next: NextFunctio
   try {
     const { id } = req.params
     const userId = req.user!.id
+    const userRole = req.user!.role
 
     const existingEvent = await prisma.event.findUnique({ where: { id } })
     if (!existingEvent) throw new AppError('Event not found', 404)
-    if (existingEvent.hostId !== userId)
+
+    // Check authorization: must be the host who created it OR an admin
+    if (existingEvent.hostId !== userId && userRole !== 'ADMIN') {
       throw new AppError('Not authorized to update this event', 403)
+    }
 
     let updates = req.body
 
     // if title changed -> regenerate slug
     if (updates.title && updates.title !== existingEvent.title) {
-      const baseSlug = slugify(updates.title)
+      const baseSlug = slugify(updates.title, { lower: true, strict: true })
       let slug = baseSlug
       let exists = await prisma.event.findUnique({ where: { slug } })
       let counter = 1
@@ -376,7 +522,12 @@ export const updateEvent = async (req: Request, res: Response, next: NextFunctio
     const event = await prisma.event.update({
       where: { id },
       data: updates,
-      include: { category: true },
+      include: { 
+        category: true,
+        host: {
+          select: { id: true, fullName: true, email: true }
+        }
+      },
     })
 
     res.status(200).json({
@@ -399,6 +550,7 @@ export const deleteEvent = async (req: Request, res: Response, next: NextFunctio
   try {
     const { id } = req.params
     const userId = req.user!.id
+    const userRole = req.user!.role
 
     const event = await prisma.event.findUnique({ where: { id } })
 
@@ -406,7 +558,8 @@ export const deleteEvent = async (req: Request, res: Response, next: NextFunctio
       throw new AppError('Event not found', 404)
     }
 
-    if (event.hostId !== userId) {
+    // Check authorization: must be the host who created it OR an admin
+    if (event.hostId !== userId && userRole !== 'ADMIN') {
       throw new AppError('Not authorized to delete this event', 403)
     }
 

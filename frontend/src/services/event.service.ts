@@ -31,6 +31,29 @@ export const eventService = {
     return response.data.data!.event
   },
 
+  // Get host's own events
+  async getMyEvents(params?: {
+    search?: string
+    status?: string
+    page?: number
+    limit?: number
+  }): Promise<EventsResponse> {
+    const response = await api.get<ApiResponse<EventsResponse>>('/events/my-events', { params })
+    return response.data.data!
+  },
+
+  // Get all events for admin
+  async getAllEventsAdmin(params?: {
+    search?: string
+    status?: string
+    categoryId?: string
+    page?: number
+    limit?: number
+  }): Promise<EventsResponse> {
+    const response = await api.get<ApiResponse<EventsResponse>>('/admin/events', { params })
+    return response.data.data!
+  },
+
   async createEvent(eventData: {
     title: string
     description: string

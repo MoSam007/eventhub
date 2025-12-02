@@ -7,6 +7,7 @@ import {
   deleteUser,
   getUserStats,
 } from '../controllers/admin.controller';
+import { getAllEventsAdmin } from '../controllers/event.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 import { body } from 'express-validator';
 import { validate } from '../middleware/validation.middleware';
@@ -48,5 +49,7 @@ router.put(
 );
 
 router.delete('/users/:id', deleteUser);
+
+router.get('/events', getAllEventsAdmin);
 
 export default router;
