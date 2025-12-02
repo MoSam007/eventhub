@@ -81,6 +81,7 @@ function App() {
       >
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="users" element={<AdminUsers />} />
+        <Route path="create-event" element={<CreateEvent />} />
         <Route path="hosts" element={<div>Hosts Management</div>} />
         <Route path="vendors" element={<div>Vendors Management</div>} />
         <Route path="events" element={<div>Events Management</div>} />
