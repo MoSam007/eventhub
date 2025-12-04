@@ -13,7 +13,7 @@ import { authenticate, authorize } from '../middleware/auth.middleware';
 const router = Router();
 
 router.get('/', getAllEvents);
-router.get('/:id', getEventById);
+
 // Protected routes - Host's own events
 router.get('/my-events', authenticate, authorize('HOST', 'ADMIN'), getMyEvents);
 
@@ -25,6 +25,7 @@ router.post(
   createEventWithDetails
 );
 
+router.get('/:id', getEventById);
 router.put('/:id', authenticate, updateEvent);
 router.delete('/:id', authenticate, deleteEvent);
 
