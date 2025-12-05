@@ -502,12 +502,17 @@ export const updateEvent = async (req: Request, res: Response, next: NextFunctio
       throw new AppError('Not authorized to update this event', 403)
     }
 
-    let updates = req.body
+    const { 
+      title, description, longDescription, categoryId, location, address, 
+      latitude, longitude, date, startTime, endTime, capacity, price, currency,
+      images, tags, features, faqs, scheduleItems, status 
+    } = req.body
 
-    // if title changed -> regenerate slug
-    if (updates.title && updates.title !== existingEvent.title) {
-      const baseSlug = slugify(updates.title, { lower: true, strict: true })
-      let slug = baseSlug
+    // Generate slug if title changed
+    let slug = existingEvent.slug
+    if (title && title !== existingEvent.title) {
+      const baseSlug = slugify(title, { lower: true, strict: true })
+      slug = baseSlug
       let exists = await prisma.event.findUnique({ where: { slug } })
       let counter = 1
       
@@ -515,18 +520,115 @@ export const updateEvent = async (req: Request, res: Response, next: NextFunctio
         slug = `${baseSlug}-${counter++}`
         exists = await prisma.event.findUnique({ where: { slug } })
       }
-
-      updates.slug = slug
     }
 
+    // Parse date and create datetime objects if provided
+    let eventDate, startDatetime, endDatetime
+    if (date) {
+      eventDate = new Date(date)
+      
+      if (startTime) {
+        const [startHour, startMin] = startTime.split(':')
+        startDatetime = new Date(eventDate)
+        startDatetime.setHours(parseInt(startHour), parseInt(startMin), 0, 0)
+      }
+      
+      if (endTime) {
+        const [endHour, endMin] = endTime.split(':')
+        endDatetime = new Date(eventDate)
+        endDatetime.setHours(parseInt(endHour), parseInt(endMin), 0, 0)
+      }
+    }
+
+    // Delete existing nested relations if they're being updated
+    if (features) {
+      await prisma.eventFeature.deleteMany({ where: { eventId: id } })
+    }
+    if (faqs) {
+      await prisma.eventFaq.deleteMany({ where: { eventId: id } })
+    }
+    if (scheduleItems) {
+      await prisma.scheduleItem.deleteMany({ where: { eventId: id } })
+    }
+    if (tags) {
+      await prisma.eventTag.deleteMany({ where: { eventId: id } })
+    }
+
+    // Build update data object
+    const updateData: any = {}
+    
+    if (slug !== existingEvent.slug) updateData.slug = slug
+    if (title) updateData.title = title
+    if (description) updateData.description = description
+    if (longDescription !== undefined) updateData.longDescription = longDescription
+    if (categoryId) updateData.categoryId = categoryId
+    if (location) updateData.location = location
+    if (address) updateData.address = address
+    if (latitude !== undefined) updateData.latitude = latitude ? parseFloat(latitude) : null
+    if (longitude !== undefined) updateData.longitude = longitude ? parseFloat(longitude) : null
+    if (eventDate) updateData.date = eventDate
+    if (startTime) updateData.startTime = startTime
+    if (endTime) updateData.endTime = endTime
+    if (startDatetime) updateData.startDatetime = startDatetime
+    if (endDatetime) updateData.endDatetime = endDatetime
+    if (capacity !== undefined) updateData.capacity = capacity ? parseInt(capacity) : null
+    if (price !== undefined) updateData.price = price ? parseFloat(price) : 0
+    if (currency) updateData.currency = currency
+    if (images !== undefined) updateData.images = images
+    if (images?.[0]) updateData.image = images[0]
+    if (tags !== undefined) updateData.tags = tags
+    if (status) updateData.status = status
+
+    // Add nested creates
+    if (features) {
+      updateData.features = {
+        create: features.map((feature: any) => ({
+          name: feature.name || feature
+        }))
+      }
+    }
+    
+    if (faqs) {
+      updateData.faqs = {
+        create: faqs.map((faq: any, index: number) => ({
+          question: faq.question,
+          answer: faq.answer,
+          order: index
+        }))
+      }
+    }
+    
+    if (scheduleItems) {
+      updateData.scheduleItems = {
+        create: scheduleItems.map((item: any, index: number) => ({
+          time: item.time,
+          activity: item.activity,
+          order: index
+        }))
+      }
+    }
+    
+    if (tags) {
+      updateData.eventTags = {
+        create: tags.map((tag: string) => ({
+          name: tag
+        }))
+      }
+    }
+
+    // Update event
     const event = await prisma.event.update({
       where: { id },
-      data: updates,
+      data: updateData,
       include: { 
         category: true,
         host: {
           select: { id: true, fullName: true, email: true }
-        }
+        },
+        faqs: true,
+        features: true,
+        scheduleItems: true,
+        eventTags: true
       },
     })
 
@@ -536,10 +638,10 @@ export const updateEvent = async (req: Request, res: Response, next: NextFunctio
       data: { event },
     })
   } catch (error) {
+    console.error('Update event error:', error)
     next(error)
   }
 }
-
 
 /**
  * -----------------------------------------------------

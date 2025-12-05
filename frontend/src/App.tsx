@@ -20,11 +20,13 @@ import NotFound from './pages/NotFound'
 import AdminDashboard from './pages/admin/Dashboard'
 import AdminUsers from './pages/admin/Users'
 import AdminManageEvents from './pages/admin/ManageEvents'
+import AdminEditEvent from './pages/admin/EditEvent'
 
 // Host Pages
 import HostDashboard from './pages/host/Dashboard'
 import HostManageEvents from './pages/host/ManageEvents'
 import CreateEvent from './pages/host/CreateEvent'
+import EditEvent from './pages/host/EditEvent'
 
 // Vendor Pages
 import VendorDashboard from './pages/vendor/Dashboard'
@@ -85,6 +87,7 @@ function App() {
         <Route path="users" element={<AdminUsers />} />
         <Route path="events" element={<AdminManageEvents />} />
         <Route path="create-event" element={<CreateEvent />} />
+        <Route path="events/:id/edit" element={<AdminEditEvent />} />
         <Route path="hosts" element={<div>Hosts Management</div>} />
         <Route path="vendors" element={<div>Vendors Management</div>} />
         <Route path="settings" element={<div>Settings</div>} />
@@ -102,6 +105,7 @@ function App() {
         <Route path="dashboard" element={<HostDashboard />} />
         <Route path="events" element={<HostManageEvents />} />
         <Route path="create-event" element={<CreateEvent />} />
+        <Route path="/host/events/:id/edit" element={<EditEvent />} />
         <Route path="bids" element={<div>Vendor Bids</div>} />
         <Route path="settings" element={<div>Settings</div>} />
       </Route>
