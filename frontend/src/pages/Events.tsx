@@ -44,7 +44,7 @@ export default function Events() {
                 setSearchQuery(e.target.value)
                 setPage(1) // reset to page 1
               }}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md"
+              className="w-full mx-auto pl-10 pr-4 py-3 border border-gray-300 rounded-full"
             />
           </div>
         </div>

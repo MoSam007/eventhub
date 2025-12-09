@@ -151,7 +151,7 @@ const EventDetailPage = () => {
         {/* Back button */}
         <button
           onClick={() => navigate(-1)}
-          className="absolute top-4 left-4 bg-white/90 hover:bg-white text-gray-900 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-lg z-10"
+          className="absolute top-4 left-4 bg-white/90 hover:bg-white text-gray-900 px-4 py-2 rounded-full flex items-center gap-2 transition-colors shadow-lg z-10"
         >
           <ArrowLeft size={20} />
           <span className="hidden sm:inline">Back</span>
