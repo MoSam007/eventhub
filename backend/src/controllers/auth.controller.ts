@@ -3,6 +3,8 @@ import prisma from '../config/database';
 import { hashPassword, comparePassword } from '../utils/password.util';
 import { generateToken, generateRefreshToken } from '../utils/jwt.utils';
 import { RegisterData, LoginCredentials } from '../types';
+import { sendVerificationEmail, sendPasswordResetEmail } from '../utils/email.utils';
+import crypto from 'crypto';
 
 export const register = async (
   req: Request<{}, {}, RegisterData>,
@@ -33,6 +35,10 @@ export const register = async (
 
     const passwordHash = await hashPassword(password);
     const userRole = role || 'USER';
+    
+    // Generate email verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     console.log('Creating user with role:', userRole);
 
@@ -43,15 +49,28 @@ export const register = async (
         fullName,
         phone: phone || null,
         role: userRole,
+        emailVerified: false,
+        verificationToken,
+        verificationExpires,
       },
       select: {
         id: true,
         email: true,
         fullName: true,
         role: true,
+        emailVerified: true,
         createdAt: true,
       },
     });
+
+    // Send verification email
+    try {
+      await sendVerificationEmail(user.email, user.fullName, verificationToken);
+      console.log('✅ Verification email sent to:', user.email);
+    } catch (emailError) {
+      console.error('⚠️ Failed to send verification email:', emailError);
+      // Don't fail registration if email fails
+    }
 
     const token = generateToken({
       userId: user.id,
@@ -72,7 +91,7 @@ export const register = async (
 
     res.status(201).json({
       status: 'success',
-      message: 'User registered successfully',
+      message: 'Registration successful. Please check your email to verify your account.',
       data: { 
         user, 
         token, 
@@ -167,6 +186,210 @@ export const getMe = async (
       data: { user },
     });
   } catch (error) {
+    next(error);
+  }
+};
+
+export const verifyEmail = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { token } = req.params;
+
+    const user = await prisma.user.findFirst({
+      where: {
+        verificationToken: token,
+        verificationExpires: {
+          gt: new Date(),
+        },
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid or expired verification token',
+      });
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        verificationToken: null,
+        verificationExpires: null,
+      },
+    });
+
+    console.log('✅ Email verified for:', user.email);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Email verified successfully',
+    });
+  } catch (error) {
+    console.error('❌ Email verification error:', error);
+    next(error);
+  }
+};
+
+export const forgotPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email } = req.body;
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    
+    // Always return success to prevent email enumeration
+    if (!user) {
+      return res.status(200).json({
+        status: 'success',
+        message: 'If an account exists with this email, a password reset link has been sent.',
+      });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetToken,
+        resetExpires,
+      },
+    });
+
+    // Send password reset email
+    try {
+      await sendPasswordResetEmail(user.email, user.fullName, resetToken);
+      console.log('✅ Password reset email sent to:', user.email);
+    } catch (emailError) {
+      console.error('⚠️ Failed to send password reset email:', emailError);
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'If an account exists with this email, a password reset link has been sent.',
+    });
+  } catch (error) {
+    console.error('❌ Forgot password error:', error);
+    next(error);
+  }
+};
+
+export const resetPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    const user = await prisma.user.findFirst({
+      where: {
+        resetToken: token,
+        resetExpires: {
+          gt: new Date(),
+        },
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid or expired reset token',
+      });
+    }
+
+    const passwordHash = await hashPassword(password);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash,
+        resetToken: null,
+        resetExpires: null,
+      },
+    });
+
+    console.log('✅ Password reset successfully for:', user.email);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Password reset successfully',
+    });
+  } catch (error) {
+    console.error('❌ Reset password error:', error);
+    next(error);
+  }
+};
+
+// Social Authentication (Google, Facebook, Apple)
+export const socialAuth = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { provider, token: socialToken, email, fullName, providerId } = req.body;
+
+    console.log('=== SOCIAL AUTH REQUEST ===');
+    console.log('Provider:', provider);
+    console.log('Email:', email);
+
+    // Verify token with provider (implementation depends on provider)
+    // This is a simplified version - you'll need to add actual OAuth verification
+    
+    let user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      // Create new user from social auth
+      user = await prisma.user.create({
+        data: {
+          email,
+          fullName,
+          emailVerified: true, // Social accounts are pre-verified
+          role: 'USER',
+          passwordHash: '', // No password for social auth
+        },
+      });
+      console.log('✅ New user created via social auth:', user.email);
+    } else {
+      console.log('✅ Existing user logged in via social auth:', user.email);
+    }
+
+    const token = generateToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    const refreshToken = generateRefreshToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    const { passwordHash, ...userWithoutPassword } = user;
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Social authentication successful',
+      data: {
+        token,
+        refreshToken,
+        user: userWithoutPassword,
+      },
+    });
+  } catch (error) {
+    console.error('❌ Social auth error:', error);
     next(error);
   }
 };

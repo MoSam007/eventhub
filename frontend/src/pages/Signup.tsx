@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import Input from '../components/common/Input'
 import Button from '../components/Button'
+import PasswordInput from '../components/common/PasswordInput';
 import { Mail, Lock, User, Phone, Users, Briefcase, Store } from 'lucide-react'
 
 type UserRole = 'USER' | 'HOST' | 'VENDOR'
@@ -162,10 +163,9 @@ export default function Signup() {
 
               <div className="relative">
                 <Lock className="absolute left-3 top-10 text-gray-400 z-10" size={20} />
-                <Input
+                <PasswordInput
                   label="Password"
                   name="password"
-                  type="password"
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="••••••••"
@@ -178,10 +178,9 @@ export default function Signup() {
 
               <div className="relative">
                 <Lock className="absolute left-3 top-10 text-gray-400 z-10" size={20} />
-                <Input
+                <PasswordInput
                   label="Confirm Password"
                   name="confirmPassword"
-                  type="password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="••••••••"

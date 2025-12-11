@@ -15,6 +15,9 @@ import Signup from './pages/Signup'
 import Onboarding from './pages/Onboarding'
 import Profile from './pages/Profile'
 import NotFound from './pages/NotFound'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
+import VerifyEmail from './pages/VerifyEmail'
 
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard'
@@ -50,6 +53,9 @@ function App() {
         <Route path="/events/:slug" element={<EventDetail />} />
         <Route path="login" element={<Login />} />
         <Route path="signup" element={<Signup />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
+        <Route path="reset-password/:token" element={<ResetPassword />} />
+        <Route path="verify-email/:token" element={<VerifyEmail />} />
       </Route>
 
       {/* Onboarding */}

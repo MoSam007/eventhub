@@ -5,7 +5,6 @@ generator client {
 
 datasource db {
   provider   = "postgresql"
-  url        = env("DATABASE_URL")
   extensions = [postgis()]
 }
 
@@ -49,6 +48,14 @@ model User {
   emailVerified   Boolean  @default(false) @map("email_verified")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
+  
+  // Email verification fields
+  verificationToken    String?   @unique
+  verificationExpires  DateTime?
+  
+  // Password reset fields
+  resetToken    String?   @unique
+  resetExpires  DateTime?
 
   // Relations
   hostedEvents    Event[]           @relation("EventHost")
@@ -58,6 +65,9 @@ model User {
   reviews         Review[]
 
   @@map("users")
+  @@index([email])
+  @@index([verificationToken])
+  @@index([resetToken])
 }
 
 model Category {
