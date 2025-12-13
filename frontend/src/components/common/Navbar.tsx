@@ -1,4 +1,3 @@
-// ==================== frontend/src/components/common/Navbar.tsx (ENHANCED) ====================
 import { Link } from 'react-router-dom'
 import { Search, MapPin, Menu, HelpCircle } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
@@ -323,7 +322,7 @@ export default function Navbar() {
           <div className="md:hidden py-4 space-y-4 border-t border-gray-200 bg-white">
             {/* Mobile Search */}
             <div className="space-y-2">
-              <div className="flex w-full border border-gray-300 rounded-md overflow-hidden">
+              <div className="flex w-full border border-gray-300 rounded-full overflow-hidden">
                 <input
                   type="text"
                   placeholder="Discover events"
@@ -338,7 +337,7 @@ export default function Navbar() {
                   <Search size={20} />
                 </button>
               </div>
-              <div className="flex items-center border border-gray-300 rounded-md px-4 py-2">
+              <div className="flex items-center border border-gray-300 rounded-full px-4 py-2">
                 <MapPin size={18} className="text-gray-400 mr-2" />
                 <input
                   type="text"
@@ -383,22 +382,18 @@ export default function Navbar() {
 
               <div className="border-t border-gray-200 my-2" />
 
-              <div className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase">
-                Help Center
-              </div>
+              <div className="px-4 py-3 border-b border-gray-100">
+                    <div className="flex items-center text-gray-900">
+                      <HelpCircle size={18} className="mr-2 text-gray-600" />
+                      <span className="font-semibold text-sm uppercase">Help Center</span>
+                    </div>
+                  </div>
               <Link
                 to="/vendor/signup"
                 className="block text-gray-700 hover:bg-gray-50 py-2 px-2 rounded"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Become a Vendor
-              </Link>
-              <Link
-                to="/help/find-events"
-                className="block text-gray-700 hover:bg-gray-50 py-2 px-2 rounded"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Find Events
               </Link>
               <Link
                 to="/help/find-vendors"

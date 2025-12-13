@@ -10,7 +10,7 @@ export default function Footer() {
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
               <Calendar className="h-8 w-8 text-primary-600" />
-              <span className="text-xl font-bold">EventHub</span>
+              <span className="text-xl font-bold text-gray-300">EventHub</span>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Discover amazing events and experiences near you.
@@ -19,7 +19,7 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h3 className="font-semibold mb-4">Quick Links</h3>
+            <h3 className="font-semibold mb-4 text-gray-300">Quick Links</h3>
             <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
               <li><Link to="/events" className="hover:text-primary-600">Browse Events</Link></li>
               <li><Link to="/about" className="hover:text-primary-600">About Us</Link></li>
@@ -29,9 +29,9 @@ export default function Footer() {
 
           {/* For Vendors */}
           <div>
-            <h3 className="font-semibold mb-4">For Vendors</h3>
+            <h3 className="font-semibold mb-4 text-gray-300">For Vendors</h3>
             <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-              <li><Link to="/vendor/dashboard" className="hover:text-primary-600">Host Events</Link></li>
+              <li><Link to="/host/dashboard" className="hover:text-primary-600">Host Events</Link></li>
               <li><Link to="/pricing" className="hover:text-primary-600">Pricing</Link></li>
               <li><Link to="/resources" className="hover:text-primary-600">Resources</Link></li>
             </ul>
