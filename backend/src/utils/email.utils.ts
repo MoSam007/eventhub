@@ -1,24 +1,48 @@
 import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-  port: Number(process.env.EMAIL_PORT) || 587,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-});
+// Resolve SMTP settings from env (supports both SMTP_* and EMAIL_* names)
+const SMTP_HOST = process.env.SMTP_HOST || process.env.EMAIL_HOST;
+const SMTP_PORT = Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 587);
+const SMTP_USER = process.env.SMTP_USER || process.env.EMAIL_USER;
+const SMTP_PASS = process.env.SMTP_PASS || process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS;
+const EMAIL_FROM = process.env.EMAIL_FROM || (SMTP_USER ? `Events Hub <${SMTP_USER}>` : 'Events Hub <no-reply@localhost>' );
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+
+async function getTransporter() {
+  // If SMTP credentials are provided, use them
+  if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
+    return nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_PORT === 465, // true for 465, false for other ports
+      auth: { user: SMTP_USER, pass: SMTP_PASS },
+    });
+  }
+
+  // Fallback to Ethereal in non-production for easy local testing
+  if (process.env.NODE_ENV !== 'production') {
+    const testAccount = await nodemailer.createTestAccount();
+    return nodemailer.createTransport({
+      host: 'smtp.ethereal.email',
+      port: 587,
+      secure: false,
+      auth: { user: testAccount.user, pass: testAccount.pass },
+    });
+  }
+
+  // If we reach here in production, throw a helpful error
+  throw new Error('SMTP credentials are missing. Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and optionally EMAIL_FROM.');
+}
 
 export const sendVerificationEmail = async (
   email: string,
   fullName: string,
   token: string
 ) => {
-  const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${token}`;
+  const verificationUrl = `${FRONTEND_URL}/verify-email/${token}`;
 
   const mailOptions = {
-    from: `"Events Hub" <${process.env.EMAIL_USER}>`,
+    from: EMAIL_FROM,
     to: email,
     subject: 'Verify Your Email - Events Hub',
     html: `
@@ -43,8 +67,13 @@ export const sendVerificationEmail = async (
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    const transporter = await getTransporter();
+    const info = await transporter.sendMail(mailOptions);
     console.log('Verification email sent to:', email);
+    const previewUrl = nodemailer.getTestMessageUrl(info);
+    if (previewUrl) {
+      console.log('Ethereal preview URL:', previewUrl);
+    }
   } catch (error) {
     console.error('Error sending verification email:', error);
     throw error;
@@ -56,10 +85,10 @@ export const sendPasswordResetEmail = async (
   fullName: string,
   token: string
 ) => {
-  const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}`;
+  const resetUrl = `${FRONTEND_URL}/reset-password/${token}`;
 
   const mailOptions = {
-    from: `"Events Hub" <${process.env.EMAIL_USER}>`,
+    from: EMAIL_FROM,
     to: email,
     subject: 'Reset Your Password - Events Hub',
     html: `
@@ -84,8 +113,13 @@ export const sendPasswordResetEmail = async (
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    const transporter = await getTransporter();
+    const info = await transporter.sendMail(mailOptions);
     console.log('Password reset email sent to:', email);
+    const previewUrl = nodemailer.getTestMessageUrl(info);
+    if (previewUrl) {
+      console.log('Ethereal preview URL:', previewUrl);
+    }
   } catch (error) {
     console.error('Error sending password reset email:', error);
     throw error;

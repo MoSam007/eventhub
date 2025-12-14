@@ -17,7 +17,7 @@ export default function Home() {
   const popularEvents = events.slice(0, 4)
   const freeEvents = events.filter(e => e.price === 0).slice(0, 4)
   const hikingEvents = events.slice(4, 8)
-  const featured = events[0] // first event becomes featured
+  const featured = events[2] // first event becomes featured
 
   return (
     <div className="min-h-screen bg-white">
