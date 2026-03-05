@@ -89,39 +89,42 @@ model Event {
   title           String
   description     String
   longDescription String?       @db.Text @map("long_description")
-  categoryId      String        @map("category_id")
-  category        Category      @relation(fields: [categoryId], references: [id])
-  hostId          String        @map("host_id")
-  host            User          @relation("EventHost", fields: [hostId], references: [id])
-  
-  // Location details
-  location        String        // geography point
+
+  categoryId      String?       @map("category_id")
+  category        Category?     @relation(fields: [categoryId], references: [id])
+
+  hostId          String?       @map("host_id")
+  host            User?         @relation("EventHost", fields: [hostId], references: [id])
+
+  externalId      String?       @map("external_id")
+  externalUrl     String?
+  source          String?
+
+  location        String
   address         String
   latitude        Float?
   longitude       Float?
-  
-  // Timing details
-  date            DateTime      // Event date
-  startTime       String        @map("start_time") 
-  endTime         String        @map("end_time")   
-  startDatetime   DateTime      @map("start_datetime") // Full datetime (kept for compatibility)
-  endDatetime     DateTime      @map("end_datetime")   // Full datetime (kept for compatibility)
-  
-  // Capacity and pricing
+
+  date            DateTime
+  startTime       String        @map("start_time")
+  endTime         String        @map("end_time")
+  startDatetime   DateTime      @map("start_datetime")
+  endDatetime     DateTime      @map("end_datetime")
+
   capacity        Int?
   price           Float?
   currency        String        @default("KES")
-  
-  // Media and tags
-  image           String?       // Primary event image
-  images          String[]      // Additional images
+
+  image           String?
+  images          String[]
   tags            String[]
-  
+
   status          EventStatus   @default(DRAFT)
+
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
-  // Relations
+// Relations
   attendees       EventAttendee[]
   serviceBids     ServiceBid[]
   reviews         Review[]
@@ -129,8 +132,7 @@ model Event {
   features        EventFeature[]
   scheduleItems   ScheduleItem[]
   eventTags       EventTag[]
-
-  @@index([location])
+  @@unique([externalId, source])
   @@index([startDatetime])
   @@index([date])
   @@index([categoryId])

@@ -1,7 +1,9 @@
 import './types/index';
 import app from './app';
 import { env } from './config/env';
+import { startEventSyncJob } from "./jobs/eventSync.job"
 
+startEventSyncJob()
 const PORT = env.PORT || 5000;
 
 app.listen(PORT, () => {

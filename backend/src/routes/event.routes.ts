@@ -8,7 +8,7 @@ import {
   getMyEvents,
 } from '../controllers/event.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
-
+import { triggerEventSync } from '../controllers/eventSync.controller';
 
 const router = Router();
 
@@ -16,6 +16,9 @@ router.get('/', getAllEvents);
 
 // Protected routes - Host's own events
 router.get('/my-events', authenticate, authorize('HOST', 'ADMIN'), getMyEvents);
+
+// Get external events
+router.get("/sync-external", triggerEventSync)
 
 // Create event
 router.post(
