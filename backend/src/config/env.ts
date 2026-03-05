@@ -15,4 +15,9 @@ export const env = {
   SMTP_PORT: parseInt(process.env.SMTP_PORT || '587'),
   SMTP_USER: process.env.SMTP_USER || '',
   SMTP_PASS: process.env.SMTP_PASS || '',
+  GROQ_API_KEY: process.env.GROQ_API_KEY || '',
+  GROQ_MODEL: process.env.GROQ_MODEL || 'meta-llama/llama-4-scout-17b-16e-instruct',
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
+  OPENAI_MODEL: process.env.OPENAI_MODEL || 'meta-llama/llama-4-scout-17b-16e-instruct',
+  EVENTBRITE_API_TOKEN: process.env.EVENTBRITE_API_TOKEN || '',
 };

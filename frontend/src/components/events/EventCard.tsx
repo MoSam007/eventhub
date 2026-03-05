@@ -38,85 +38,93 @@ export default function EventCard({ event }: EventCardProps) {
       ? 'bg-gray-100 text-gray-800'
       : 'bg-red-100 text-red-800'
 
-  return (
-    <Link to={`/events/${event.slug}`} className="group">
-      <Card hover className="h-full">
+  const CardContent = (
+    <Card hover className="h-full">
 
-        {/* IMAGE */}
-        <div className="relative h-48 overflow-hidden bg-gray-100 rounded-t-xl">
-          <img
-            src={primaryImage}
-            alt={event.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
+      {/* IMAGE */}
+      <div className="relative h-48 overflow-hidden bg-gray-100 rounded-t-xl">
+        <img
+          src={primaryImage}
+          alt={event.title}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
 
-          {/* STATUS */}
-          {event.status && (
-            <div className="absolute top-2 left-2">
-              <span className={`px-2 py-1 rounded text-xs font-semibold ${statusColor}`}>
-                {event.status}
-              </span>
-            </div>
-          )}
-
-          {/* PRICE */}
-          {event.price !== undefined && (
-            <div className="absolute top-2 right-2 bg-orange-600 text-white px-3 py-1 rounded-full text-sm font-semibold shadow">
-              {event.price === 0
-                ? 'FREE'
-                : `${event.currency || 'KES'} ${event.price.toLocaleString()}`}
-            </div>
-          )}
-        </div>
-
-        {/* CONTENT */}
-        <div className="p-4">
-
-          {/* CATEGORY */}
-          {event.category && (
-            <div className="text-xs text-orange-600 font-semibold mb-2">
-              {event.category.name}
-            </div>
-          )}
-
-          {/* TITLE */}
-          <h3 className="text-base font-semibold text-gray-900 mb-2 line-clamp-2 min-h-[3rem] group-hover:text-orange-600 transition-colors">
-            {event.title}
-          </h3>
-
-          {/* DESCRIPTION */}
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-            {event.description}
-          </p>
-
-          {/* DATE • TIME • LOCATION • CAPACITY */}
-          <div className="space-y-2 text-sm text-gray-600">
-
-            <div className="flex items-center gap-2">
-              <Calendar size={16} className="flex-shrink-0" />
-              <span>
-                {dayOfWeek}, {month} {day} · {time}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <MapPin size={16} className="flex-shrink-0" />
-              <span className="line-clamp-1">
-                {event.address || event.location}
-              </span>
-            </div>
-
-            {event.registered !== undefined && event.capacity && (
-              <div className="flex items-center gap-2">
-                <Users size={16} className="flex-shrink-0" />
-                <span>
-                  {event.registered}/{event.capacity} registered
-                </span>
-              </div>
-            )}
+        {/* STATUS */}
+        {event.status && (
+          <div className="absolute top-2 left-2">
+            <span className={`px-2 py-1 rounded text-xs font-semibold ${statusColor}`}>
+              {event.status}
+            </span>
           </div>
+        )}
+
+        {/* PRICE */}
+        {event.price !== undefined && (
+          <div className="absolute top-2 right-2 bg-orange-600 text-white px-3 py-1 rounded-full text-sm font-semibold shadow">
+            {event.price === 0
+              ? 'FREE'
+              : `${event.currency || 'KES'} ${event.price.toLocaleString()}`}
+          </div>
+        )}
+      </div>
+
+      {/* CONTENT */}
+      <div className="p-4">
+
+        {/* CATEGORY */}
+        {event.category && (
+          <div className="text-xs text-orange-600 font-semibold mb-2">
+            {event.category.name}
+          </div>
+        )}
+
+        {/* TITLE */}
+        <h3 className="text-base font-semibold text-gray-900 mb-2 line-clamp-2 min-h-[3rem] group-hover:text-orange-600 transition-colors">
+          {event.title}
+        </h3>
+
+        {/* DESCRIPTION */}
+        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+          {event.description}
+        </p>
+
+        {/* DATE • TIME • LOCATION • CAPACITY */}
+        <div className="space-y-2 text-sm text-gray-600">
+
+          <div className="flex items-center gap-2">
+            <Calendar size={16} className="flex-shrink-0" />
+            <span>
+              {dayOfWeek}, {month} {day} · {time}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <MapPin size={16} className="flex-shrink-0" />
+            <span className="truncate">{event.location}</span>
+          </div>
+
+          {event.capacity && (
+            <div className="flex items-center gap-2">
+              <Users size={16} className="flex-shrink-0" />
+              <span>{event.capacity} Capacity</span>
+            </div>
+          )}
         </div>
-      </Card>
+      </div>
+    </Card>
+  )
+
+  if (event.externalUrl) {
+    return (
+      <a href={event.externalUrl} target="_blank" rel="noopener noreferrer" className="group h-full block">
+        {CardContent}
+      </a>
+    )
+  }
+
+  return (
+    <Link to={`/events/${event.slug}`} className="group h-full block">
+      {CardContent}
     </Link>
   )
 }

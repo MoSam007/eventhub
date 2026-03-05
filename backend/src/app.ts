@@ -15,6 +15,7 @@ import uploadRoutes from './routes/upload.routes';
 import vendorRoutes from './routes/vendor.routes';
 import adminRoutes from './routes/admin.routes';
 import aiRoutes from './routes/ai.routes';
+import externalEventRoutes from './routes/externalEvent.routes';
 
 const app: Application = express();
 // Middleware
@@ -56,6 +57,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/vendor', vendorRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/external', externalEventRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

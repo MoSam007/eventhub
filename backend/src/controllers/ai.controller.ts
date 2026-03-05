@@ -1,8 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 import OpenAI from 'openai';
+import { env } from '../config/env';
 
+// Client for Groq (text generation)
+const groq = new OpenAI({
+  apiKey: env.GROQ_API_KEY,
+  baseURL: "https://api.groq.com/openai/v1",
+});
+
+// Client for OpenAI (image generation)
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: env.GROQ_API_KEY,
+  baseURL: "https://api.groq.com/openai/v1",
 });
 
 export const generateEventContent = async (
@@ -16,9 +25,9 @@ export const generateEventContent = async (
     console.log('=== AI EVENT GENERATION REQUEST ===');
     console.log('Description:', eventDescription);
 
-    // Generate event content using OpenAI
-    const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4-turbo-preview',
+    // Generate event content using Groq
+    const completion = await groq.chat.completions.create({
+      model: env.GROQ_MODEL,
       messages: [
         {
           role: 'system',
@@ -109,7 +118,7 @@ export const generateEventImages = async (
     // Generate images using DALL-E
     const imagePromises = prompts.slice(0, 3).map(async (prompt: string) => {
       const response = await openai.images.generate({
-        model: "dall-e-3",
+        model: "meta-llama/llama-4-scout-17b-16e-instruct",
         prompt: `Professional event photography: ${prompt}. High quality, vibrant, engaging. Event: ${eventTitle}`,
         n: 1,
         size: "1024x1024",

@@ -57,7 +57,7 @@ export interface Event {
   longDescription?: string;
   categoryId: string;
   category?: Category;
-  hostId: string;
+  hostId?: string;
   host?: EventHost;
   location: string;
   address: string;
@@ -85,6 +85,43 @@ export interface Event {
   eventTags?: EventTag[];
   registered?: number;
   spotsLeft?: number;
+  externalUrl?: string;
+}
+
+export interface EventbriteEvent {
+  id: string;
+  name: {
+    text: string;
+    html: string;
+  };
+  description: {
+    text: string;
+    html: string;
+  };
+  url: string;
+  start: {
+    timezone: string;
+    local: string;
+    utc: string;
+  };
+  end: {
+    timezone: string;
+    local: string;
+    utc: string;
+  };
+  logo: {
+    url: string;
+  } | null;
+  venue?: {
+    name: string;
+    address: {
+      address_1: string;
+      city: string;
+      region: string;
+      postal_code: string;
+      country: string;
+    };
+  };
 }
 
 export interface Category {
