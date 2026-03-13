@@ -1,7 +1,14 @@
 import { Link } from 'react-router-dom'
 import Card from '../common/Card'
 import { Event } from '../../types'
-import { Calendar, MapPin, Users } from 'lucide-react'
+import { Calendar, MapPin, Users, ExternalLink } from 'lucide-react'
+import { getCategoryImage, isBlurryImage } from '../../utils/categoryImages'
+
+const SOURCE_LABELS: Record<string, string> = {
+  eventbrite: 'Eventbrite',
+  google: 'Google',
+  kenyabuzz: 'KenyaBuzz',
+}
 
 interface EventCardProps {
   event: Event
@@ -22,11 +29,15 @@ export default function EventCard({ event }: EventCardProps) {
       hour12: true,
     })
 
-  // Primary image fallback
-  const primaryImage =
-    event.image ||
-    event.images?.[0] ||
-    'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=300&fit=crop'
+  const categoryFallback = getCategoryImage(event.category?.slug)
+
+  const rawImage = !isBlurryImage(event.image)
+    ? event.image
+    : !isBlurryImage(event.images?.[0])
+    ? event.images?.[0]
+    : null
+
+  const primaryImage = rawImage || categoryFallback
 
   // Status color styling
   const statusColor =
@@ -47,14 +58,21 @@ export default function EventCard({ event }: EventCardProps) {
           src={primaryImage}
           alt={event.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          onError={(e) => { (e.target as HTMLImageElement).src = categoryFallback }}
         />
 
         {/* STATUS */}
         {event.status && (
-          <div className="absolute top-2 left-2">
+          <div className="absolute top-2 left-2 flex items-center gap-1">
             <span className={`px-2 py-1 rounded text-xs font-semibold ${statusColor}`}>
               {event.status}
             </span>
+            {event.source && SOURCE_LABELS[event.source] && (
+              <span className="px-2 py-1 rounded text-xs font-semibold bg-gray-800/80 text-white flex items-center gap-1">
+                <ExternalLink size={10} />
+                {SOURCE_LABELS[event.source]}
+              </span>
+            )}
           </div>
         )}
 
@@ -113,14 +131,6 @@ export default function EventCard({ event }: EventCardProps) {
       </div>
     </Card>
   )
-
-  if (event.externalUrl) {
-    return (
-      <a href={event.externalUrl} target="_blank" rel="noopener noreferrer" className="group h-full block">
-        {CardContent}
-      </a>
-    )
-  }
 
   return (
     <Link to={`/events/${event.slug}`} className="group h-full block">

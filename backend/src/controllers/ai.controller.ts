@@ -118,7 +118,7 @@ export const generateEventImages = async (
     // Generate images using DALL-E
     const imagePromises = prompts.slice(0, 3).map(async (prompt: string) => {
       const response = await openai.images.generate({
-        model: "meta-llama/llama-4-scout-17b-16e-instruct",
+        model: "dall-e-3",
         prompt: `Professional event photography: ${prompt}. High quality, vibrant, engaging. Event: ${eventTitle}`,
         n: 1,
         size: "1024x1024",

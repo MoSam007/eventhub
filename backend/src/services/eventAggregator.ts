@@ -2,81 +2,176 @@ import prisma from "../config/database"
 
 import { fetchGoogleEvents } from "./googleEventsFetcher"
 import { fetchEventbriteEvents } from "./eventbriteFetcher"
+import { fetchKenyaBuzzEvents } from "./kenyaBuzzFetcher"
+
 import { normalizeExternalEvent } from "../utils/eventNormalizer"
+
+import { enrichEventImage } from "./imageEnrichmet.service"
+import { classifyEventCategory } from "./eventClassifier"
+
+import { loadCategoryCache, resolveCategoryId } from "./categoryResolver.service"
 
 export const syncExternalEvents = async () => {
 
-  console.log("Syncing external events...")
+  console.log("Starting Nairobi event ingestion...")
 
-  // ------------------------------
-  // 1️⃣ Fetch all external sources in parallel
-  // ------------------------------
-  const [googleEvents, eventbriteEvents] = await Promise.all([
+  // --------------------------------
+  // Load category cache
+  // --------------------------------
+
+  await loadCategoryCache()
+
+  // --------------------------------
+  // Fetch sources in parallel
+  // --------------------------------
+
+  const [
+    googleEvents,
+    eventbriteEvents,
+    kenyaBuzzEvents
+  ] = await Promise.all([
+
     fetchGoogleEvents(),
-    fetchEventbriteEvents()
+    fetchEventbriteEvents(),
+    fetchKenyaBuzzEvents()
+
   ])
 
-  console.log(`Fetched ${googleEvents.length} Google events`)
-  console.log(`Fetched ${eventbriteEvents.length} Eventbrite events`)
+  console.log(`Google events: ${googleEvents.length}`)
+  console.log(`Eventbrite events: ${eventbriteEvents.length}`)
+  console.log(`KenyaBuzz events: ${kenyaBuzzEvents.length}`)
 
-  // ------------------------------
-  // 2️⃣ Normalize events
-  // ------------------------------
-  const normalizedEvents = [
-    ...googleEvents.map((e: any) => normalizeExternalEvent(e, "google")),
-    ...eventbriteEvents.map((e: any) => normalizeExternalEvent(e, "eventbrite"))
+  // --------------------------------
+  // Normalize events
+  // --------------------------------
+
+  const normalized = [
+
+    ...googleEvents.map((e:any)=>
+      normalizeExternalEvent(e,"google")
+    ),
+
+    ...eventbriteEvents.map((e:any)=>
+      normalizeExternalEvent(e,"eventbrite")
+    ),
+
+    ...kenyaBuzzEvents.map((e:any)=>
+      normalizeExternalEvent(e,"kenyabuzz")
+    )
+
   ]
 
-  // ------------------------------
-  // 3️⃣ Remove invalid events
-  // ------------------------------
-  const cleanedEvents = normalizedEvents
-    .filter(e => e.externalUrl) // must have URL
-    .map(e => ({
-      ...e,
+  console.log(`Normalized events: ${normalized.length}`)
 
-      // Ensure required schema fields
-      startTime: e.startTime || "00:00",
-      endTime: e.endTime || "23:59",
+  // --------------------------------
+  // AI categorization + image enrichment
+  // --------------------------------
 
-      images: e.images || [],
-      ...(e as any).tags ? { tags: (e as any).tags } : {},
+  const enrichedEvents = await Promise.all(
 
-      price: e.price ?? 0,
-      currency: e.currency || "KES",
+    normalized.map(async(event)=>{
 
-      status: "UPCOMING",
+      try {
 
-      categoryId: process.env.EXTERNAL_EVENTS_CATEGORY_ID || null
-    }))
+        const image = await enrichEventImage(
+          event.title,
+          event.image
+        )
 
-  // ------------------------------
-  // 4️⃣ Remove duplicates in memory
-  // ------------------------------
-  const uniqueMap = new Map()
+        const categorySlug = await classifyEventCategory(event)
 
-  for (const event of cleanedEvents) {
-    uniqueMap.set(event.externalUrl, event)
+        const categoryId = categorySlug ? resolveCategoryId(categorySlug) : undefined
+
+        return {
+
+          ...event,
+
+          image,
+
+          images: image ? [image] : [],
+
+          startTime: event.startTime || "00:00",
+
+          endTime: event.endTime || "23:59",
+
+          price: event.price ?? 0,
+
+          currency: event.currency || "KES",
+
+          tags: (event as any).tags || [],
+
+          status: "UPCOMING",
+
+          categoryId
+
+        }
+
+      } catch (err) {
+
+        console.error("Event enrichment failed:", err)
+
+        return null
+
+      }
+
+    })
+  )
+
+  // Remove failed enrichments
+  const cleaned = enrichedEvents.filter(Boolean)
+
+  // --------------------------------
+  // Remove duplicates in memory
+  // --------------------------------
+
+  const map = new Map()
+
+  for (const event of cleaned) {
+
+    if (!event || !event.externalUrl) continue
+
+    map.set(event.externalUrl,event)
+
   }
 
-  const uniqueEvents = Array.from(uniqueMap.values())
+  const uniqueEvents = Array.from(map.values())
 
-  console.log(`After deduplication: ${uniqueEvents.length} events`)
+  console.log(`Unique events: ${uniqueEvents.length}`)
 
   if (uniqueEvents.length === 0) {
-    console.log("No new events to insert")
+
+    console.log("No events to insert")
+
     return 0
+
   }
 
-  // ------------------------------
-  // 5️⃣ Insert events using createMany
-  // ------------------------------
-  const result = await prisma.event.createMany({
-    data: uniqueEvents,
-    skipDuplicates: true
-  })
+  // --------------------------------
+  // Batch insert
+  // --------------------------------
 
-  console.log(`Inserted ${result.count} new external events`)
+  const BATCH_SIZE = 100
 
-  return result.count
+  let inserted = 0
+
+  for (let i = 0; i < uniqueEvents.length; i += BATCH_SIZE) {
+
+    const batch = uniqueEvents.slice(i, i + BATCH_SIZE)
+
+    const result = await prisma.event.createMany({
+
+      data: batch as any,
+
+      skipDuplicates: true
+
+    })
+
+    inserted += result.count
+
+  }
+
+  console.log(`Inserted ${inserted} new events`)
+
+  return inserted
+
 }

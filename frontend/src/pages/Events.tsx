@@ -2,9 +2,7 @@ import { useEffect, useState } from 'react'
 import { Search } from 'lucide-react'
 import EventList from '../components/events/EventList'
 import { useEvents } from '../hooks/useEvents'
-import { useEventbriteNairobiEvents } from '../hooks/useExternalEvents'
 import { useSearchParams } from 'react-router-dom'
-import { Event } from '../types'
 
 
 export default function Events() {
@@ -25,30 +23,8 @@ export default function Events() {
     limit: 12
   })
 
-  const { data: eventbriteData, isLoading: isEventbriteLoading } = useEventbriteNairobiEvents()
-
   const events = data?.events ?? []
   const totalPages = data?.pagination?.totalPages ?? 1
-
-  // Map Eventbrite events to our internal Event type
-  const mappedEventbriteEvents: Event[] = (eventbriteData || []).map(eb => ({
-    id: eb.id,
-    slug: eb.id, // Use ID as slug for external events
-    title: eb.name.text,
-    description: eb.description.text || '',
-    categoryId: 'external',
-    category: { id: 'external', name: 'Eventbrite', slug: 'eventbrite' },
-    location: eb.venue?.name || 'Nairobi, Kenya',
-    address: eb.venue?.address.address_1 || 'Nairobi, Kenya',
-    startDatetime: eb.start.utc,
-    endDatetime: eb.end.utc,
-    image: eb.logo?.url,
-    images: eb.logo ? [eb.logo.url] : [],
-    tags: [],
-    status: 'Upcoming',
-    createdAt: new Date().toISOString(),
-    externalUrl: eb.url
-  }))
 
   return (
     <div className="min-h-screen bg-white py-8">
@@ -156,34 +132,6 @@ export default function Events() {
             )}
           </div>
 
-          {/* Eventbrite Events Section */}
-          <div className="pt-12 border-t border-gray-100">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">Events from Eventbrite</h2>
-                <p className="text-gray-600 mt-1">Discover more upcoming events in Nairobi from around the web</p>
-              </div>
-              <div className="hidden sm:block">
-                <img 
-                  src="https://upload.wikimedia.org/wikipedia/commons/8/82/Eventbrite_logo.svg"
-                  alt="Eventbrite" 
-                  className="h-6"
-                />
-              </div>
-            </div>
-            
-            {isEventbriteLoading ? (
-              <EventList events={[]} isLoading={true} />
-            ) : mappedEventbriteEvents.length === 0 ? (
-              <div className="text-center py-16 bg-gray-50 rounded-xl">
-                <p className="text-lg text-gray-600">
-                  No upcoming events found on Eventbrite at the moment.
-                </p>
-              </div>
-            ) : (
-              <EventList events={mappedEventbriteEvents} />
-            )}
-          </div>
         </div>
       </div>
     </div>

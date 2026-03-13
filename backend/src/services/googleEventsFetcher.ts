@@ -2,31 +2,40 @@ import axios from "axios"
 
 export const fetchGoogleEvents = async () => {
 
-  const pages = [0, 10, 20, 30, 40, 50] // each = next page
-  let allEvents: any[] = []
+  const pages = [0, 10, 20, 30, 40, 50]
+
+  let events: any[] = []
 
   for (const start of pages) {
 
-    const res = await axios.get(
-      "https://serpapi.com/search.json",
-      {
-        params: {
-          engine: "google_events",
-          q: "events in Nairobi",
-          location: "Nairobi, Kenya",
-          start,
-          api_key: process.env.SERP_API_KEY
-        }
-      }
-    )
+    try {
 
-    const events = res.data.events_results || []
-    allEvents.push(...events)
+      const res = await axios.get(
+        "https://serpapi.com/search.json",
+        {
+          params: {
+            engine: "google_events",
+            q: "events in Nairobi",
+            location: "Nairobi, Kenya",
+            start,
+            api_key: process.env.SERP_API_KEY
+          }
+        }
+      )
+
+      const pageEvents = res.data.events_results || []
+      events.push(...pageEvents)
+
+    } catch (err) {
+      console.error("Google events page failed:", err)
+
+    }
+
   }
 
-  console.log(`Fetched ${allEvents.length} Google events`)
+  console.log(`Fetched ${events.length} Google events`)
 
-  return allEvents.map((e:any)=>({
+  return events.map((e:any)=>({
     id: e.title,
     title: e.title,
     description: e.description || "",
@@ -37,4 +46,5 @@ export const fetchGoogleEvents = async () => {
     address: e.address,
     url: e.link
   }))
+
 }

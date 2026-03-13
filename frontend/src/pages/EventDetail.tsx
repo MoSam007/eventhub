@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { eventService } from '../services/event.service';
 import { Event } from '../types';
+import { getCategoryImage, isBlurryImage } from '../utils/categoryImages';
 
 const EventDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -126,13 +127,25 @@ const EventDetailPage = () => {
     hour12: true 
   });
 
-  // Get primary image or fallback
-  const primaryImage = event.image || event.images[0] || 
-    'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&h=600&fit=crop';
+  // Get primary image or category-based fallback
+  const categoryFallback = getCategoryImage(event.category?.slug)
+  const rawImage = !isBlurryImage(event.image)
+    ? event.image
+    : !isBlurryImage(event.images?.[0])
+    ? event.images[0]
+    : null
+  const primaryImage = rawImage || categoryFallback
 
   // Get host avatar
   const hostName = event.host?.fullName || 'Event Host';
   const hostAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(hostName)}&size=200&background=f97316&color=fff`;
+
+  const sourceLabels: Record<string, string> = {
+    eventbrite: 'Eventbrite',
+    google: 'Google',
+    kenyabuzz: 'KenyaBuzz',
+  };
+  const sourceLabel = event.source ? (sourceLabels[event.source] || event.source) : 'Original Site';
 
   // Get location name
   const locationName = event.location || event.address;
@@ -141,10 +154,11 @@ const EventDetailPage = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
       <div className="relative h-64 md:h-96 overflow-hidden">
-        <img 
-          src={primaryImage} 
+        <img
+          src={primaryImage}
           alt={event.title}
           className="w-full h-full object-cover"
+          onError={(e) => { (e.target as HTMLImageElement).src = categoryFallback }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
         
@@ -425,14 +439,32 @@ const EventDetailPage = () => {
                 </div>
               )}
 
-              <button className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 rounded-lg transition-colors mb-3 flex items-center justify-center gap-2">
-                <span>🎫</span>
-                Register Now
-              </button>
-
-              <p className="text-xs text-center text-gray-500">
-                Secure registration • Instant confirmation
-              </p>
+              {event.externalUrl ? (
+                <>
+                  <a
+                    href={event.externalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 rounded-lg transition-colors mb-3 flex items-center justify-center gap-2"
+                  >
+                    <ExternalLink size={18} />
+                    View on {sourceLabel}
+                  </a>
+                  <p className="text-xs text-center text-gray-500">
+                    Opens on {sourceLabel} • External site
+                  </p>
+                </>
+              ) : (
+                <>
+                  <button className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 rounded-lg transition-colors mb-3 flex items-center justify-center gap-2">
+                    <span>🎫</span>
+                    Register Now
+                  </button>
+                  <p className="text-xs text-center text-gray-500">
+                    Secure registration • Instant confirmation
+                  </p>
+                </>
+              )}
             </div>
 
             {/* Host Information */}

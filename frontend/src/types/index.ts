@@ -86,6 +86,7 @@ export interface Event {
   registered?: number;
   spotsLeft?: number;
   externalUrl?: string;
+  source?: string;
 }
 
 export interface EventbriteEvent {
